@@ -29,3 +29,10 @@
 
   (generate-text [this prompt]
     "Generate text based on the given prompt."))
+(ns dolores.llm)
+
+(defprotocol LLM
+  "Protocol for interacting with Large Language Models (LLMs)."
+
+  (generate-text [this prompt]
+    "Generate text based on the given prompt."))
