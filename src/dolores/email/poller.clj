@@ -37,7 +37,7 @@
         response (.execute messages)]
     (map #(.getId %) (.getMessages response))))
 
-(defn poll-imap [imap-config poll-interval]
+(defn poll-imap [imap-config config]
   ;; Poll emails from IMAP and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
@@ -47,11 +47,11 @@
             (async/>! ch email)))
         (catch Exception e
           (log/error e "Error polling IMAP emails")))
-      (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
+      (async/<! (async/timeout (::poll-interval config))) ;; Poll at configured interval
       (recur))
     ch))
 
-(defn poll-gmail [gmail-config poll-interval]
+(defn poll-gmail [gmail-config config]
   ;; Poll emails from Gmail and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
@@ -61,7 +61,7 @@
             (async/>! ch email)))
         (catch Exception e
           (log/error e "Error polling Gmail emails")))
-      (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
+      (async/<! (async/timeout (::poll-interval config))) ;; Poll at configured interval
       (recur))
     ch))
 
