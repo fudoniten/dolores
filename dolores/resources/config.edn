@@ -1,6 +1,9 @@
 ;; Configuration file for service settings
 {:deps {org.clojure/clojure {:mvn/version "1.10.3"}
-        ;; Add other dependencies here
+        com.sun.mail/javax.mail {:mvn/version "1.6.2"}
+        google-api-client/google-api-client {:mvn/version "1.32.1"}
+        google-oauth-client/google-oauth-client-jetty {:mvn/version "1.32.1"}
+        google-api-services-gmail/v1-rev20211011-1.32.1 {:mvn/version "1.32.1"}
         }
  :paths ["src" "resources"]
  :aliases {:dev {:extra-paths ["test"]
