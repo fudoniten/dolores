@@ -1,1 +1,9 @@
 ;; Configuration file for service settings
+{:deps {org.clojure/clojure {:mvn/version "1.10.3"}
+        ;; Add other dependencies here
+        }
+ :paths ["src" "resources"]
+ :aliases {:dev {:extra-paths ["test"]
+                 :extra-deps {;; Add development dependencies here
+                              }}
+           :uberjar {:main-opts ["-m" "dolores.core"]}}}
