@@ -38,6 +38,7 @@
     (log/info "Gmail access token refreshed successfully.")
     (catch Exception e
       (log/error e "Failed to refresh Gmail access token")))
+(defn- fetch-gmail-emails [service user-id]
   ;; Function to fetch emails using Gmail API
   (let [messages (.list (.users service) user-id)
         response (.execute messages)]
