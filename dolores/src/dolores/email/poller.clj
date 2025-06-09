@@ -29,19 +29,40 @@
         response (.execute messages)]
     (map #(.getId %) (.getMessages response))))
 
-(defn poll-emails [config]
-  ;; Poll emails from IMAP and Gmail, and return a channel with new emails
-  (let [ch (async/chan)
-        imap-config (:imap config)
-        gmail-config (:gmail config)]
+(defn poll-imap [imap-config]
+  ;; Poll emails from IMAP and return a channel with new emails
+  (let [ch (async/chan)]
     (async/go-loop []
       (try
-        (let [imap-emails (fetch-imap-emails (:host imap-config) (:user imap-config) (:password imap-config))
-              gmail-emails (fetch-gmail-emails (:service gmail-config) (:user-id gmail-config))]
-          (doseq [email (concat imap-emails gmail-emails)]
+        (let [emails (fetch-imap-emails (:host imap-config) (:user imap-config) (:password imap-config))]
+          (doseq [email emails]
             (async/>! ch email)))
         (catch Exception e
-          (log/error e "Error polling emails")))
+          (log/error e "Error polling IMAP emails")))
       (async/<! (async/timeout 60000)) ;; Poll every 60 seconds
       (recur))
     ch))
+
+(defn poll-gmail [gmail-config]
+  ;; Poll emails from Gmail and return a channel with new emails
+  (let [ch (async/chan)]
+    (async/go-loop []
+      (try
+        (let [emails (fetch-gmail-emails (:service gmail-config) (:user-id gmail-config))]
+          (doseq [email emails]
+            (async/>! ch email)))
+        (catch Exception e
+          (log/error e "Error polling Gmail emails")))
+      (async/<! (async/timeout 60000)) ;; Poll every 60 seconds
+      (recur))
+    ch))
+
+(defn merge-channels [channels]
+  ;; Merge multiple channels into a single channel
+  (let [merged-ch (async/chan)]
+    (doseq [ch channels]
+      (async/go-loop []
+        (when-let [email (async/<! ch)]
+          (async/>! merged-ch email)
+          (recur))))
+    merged-ch))
