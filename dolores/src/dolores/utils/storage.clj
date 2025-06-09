@@ -2,6 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [java.time.format DateTimeFormatter]
+            [java.time LocalDate]
             [java.time LocalDateTime]))
 
 (defn read-edn-file
@@ -47,3 +48,22 @@
     (doseq [file (file-seq (io/file base-dir))]
       (when (and (.isFile file) (< (.lastModified file) cutoff-time))
         (.delete file)))))
+
+(defn load-data-for-date-range
+  "Load and merge data from EDN files within a specified date range."
+  [base-dir start-date end-date]
+  (let [start (LocalDate/parse start-date)
+        end (LocalDate/parse end-date)
+        files (file-seq (io/file base-dir))]
+    (->> files
+         (filter #(and (.isFile %)
+                       (let [file-date (LocalDate/parse (subs (.getName %) 0 10))]
+                         (and (not (.isBefore file-date start))
+                              (not (.isAfter file-date end))))))
+         (map read-edn-file)
+         (apply merge-data))))
+
+(defn merge-data
+  "Merge multiple data structures into one."
+  [& data]
+  (apply merge-with into data))
