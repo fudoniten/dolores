@@ -3,7 +3,8 @@
 (ns dolores.email.poller
   (:require [clojure.core.async :as async]
             [clojure.java.io :as io]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [dolores.utils :refer [merge-channels]])
   (:import (javax.mail Session Store Folder)
            (com.google.api.services.gmail Gmail)
            (com.google.api.services.gmail.model ListMessagesResponse)
@@ -57,12 +58,3 @@
       (recur))
     ch))
 
-(defn merge-channels [channels]
-  ;; Merge multiple channels into a single channel
-  (let [merged-ch (async/chan)]
-    (doseq [ch channels]
-      (async/go-loop []
-        (when-let [email (async/<! ch)]
-          (async/>! merged-ch email)
-          (recur))))
-    merged-ch))
