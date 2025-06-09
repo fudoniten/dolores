@@ -23,15 +23,14 @@
           (map #(str (.getSubject %)) messages))))))
 
 (defn- get-gmail-credentials
-  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID, client secret, and redirect URI."
-  [client-id client-secret redirect-uri]
-  ;; Function to get Gmail credentials using OAuth 2.0
+  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
+  [client-id client-secret]
+  ;; Function to get Gmail credentials using OAuth 2.0 without redirect URI
   (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
         json-factory (JacksonFactory/getDefaultInstance)
         flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
                  (.setAccessType "offline")
                  (.build))
-        receiver (LocalServerReceiver$Builder.)
         credential (.authorize flow "user")]
     credential))
 
