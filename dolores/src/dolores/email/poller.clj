@@ -24,6 +24,17 @@
         (let [messages (.getMessages inbox)]
           (map #(str (.getSubject %)) messages))))))
 
+(defn- get-gmail-credentials [client-id client-secret redirect-uri]
+  ;; Function to get Gmail credentials using OAuth 2.0
+  (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
+        json-factory (JacksonFactory/getDefaultInstance)
+        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
+                 (.setAccessType "offline")
+                 (.build))
+        receiver (LocalServerReceiver$Builder.)
+        credential (.authorize flow "user")]
+    credential))
+
 (defn- fetch-gmail-emails [service user-id]
   ;; Function to fetch emails using Gmail API
   (let [messages (.list (.users service) user-id)
