@@ -4,6 +4,19 @@
             [java.time.format DateTimeFormatter]
             [java.time LocalDateTime]))
 
+(defn read-edn-file
+  "Read data from an EDN file."
+  [file-path]
+  (with-open [r (io/reader file-path)]
+    (edn/read r)))
+
+(defn write-edn-file
+  "Write data to an EDN file."
+  [file-path data]
+  (with-open [w (io/writer file-path)]
+    (binding [*print-dup* true]
+      (prn data w))))
+
 (defn- current-datetime
   "Get the current date and time as a formatted string."
   []
@@ -34,16 +47,3 @@
     (doseq [file (file-seq (io/file base-dir))]
       (when (and (.isFile file) (< (.lastModified file) cutoff-time))
         (.delete file)))))
-
-(defn read-edn-file
-  "Read data from an EDN file."
-  [file-path]
-  (with-open [r (io/reader file-path)]
-    (edn/read r)))
-
-(defn write-edn-file
-  "Write data to an EDN file."
-  [file-path data]
-  (with-open [w (io/writer file-path)]
-    (binding [*print-dup* true]
-      (prn data w))))
