@@ -45,4 +45,3 @@
       (async/<! (async/timeout 60000)) ;; Poll every 60 seconds
       (recur))
     ch))
-  )
