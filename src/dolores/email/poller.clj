@@ -8,7 +8,9 @@
            (com.google.api.client.json.jackson2 JacksonFactory)
            (com.google.api.client.auth.oauth2 Credential)))
 
-(defn- fetch-imap-emails [host user password]
+(defn- fetch-imap-emails
+  "Fetches emails using IMAP protocol from the specified host with given user credentials."
+  [host user password]
   ;; Function to fetch emails using IMAP
   (let [props (System/getProperties)]
     (.put props "mail.store.protocol" "imaps")
@@ -20,7 +22,9 @@
         (let [messages (.getMessages inbox)]
           (map #(str (.getSubject %)) messages))))))
 
-(defn- get-gmail-credentials [client-id client-secret redirect-uri]
+(defn- get-gmail-credentials
+  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID, client secret, and redirect URI."
+  [client-id client-secret redirect-uri]
   ;; Function to get Gmail credentials using OAuth 2.0
   (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
         json-factory (JacksonFactory/getDefaultInstance)
@@ -31,7 +35,9 @@
         credential (.authorize flow "user")]
     credential))
 
-(defn- refresh-gmail-token [credential]
+(defn- refresh-gmail-token
+  "Refreshes the Gmail API access token using the provided credential object."
+  [credential]
   ;; Function to refresh Gmail API access token
   (try
     (.refreshToken credential)
@@ -39,13 +45,17 @@
     (catch Exception e
       (log/error e "Failed to refresh Gmail access token"))))
 
-(defn- fetch-gmail-emails [service user-id]
+(defn- fetch-gmail-emails
+  "Fetches emails using the Gmail API for the specified user ID."
+  [service user-id]
   ;; Function to fetch emails using Gmail API
   (let [messages (.list (.users service) user-id)
         response (.execute messages)]
     (map #(.getId %) (.getMessages response))))
 
-(defn poll-imap [{:keys [::imap-host ::imap-user ::imap-password]} {:keys [::poll-interval]}]
+(defn poll-imap
+  "Polls emails from an IMAP server at regular intervals and returns a channel with new emails."
+  [{:keys [::imap-host ::imap-user ::imap-password]} {:keys [::poll-interval]}]
   ;; Poll emails from IMAP and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
@@ -59,7 +69,9 @@
       (recur))
     ch))
 
-(defn poll-gmail [{:keys [::gmail-service ::gmail-user-id]} {:keys [::poll-interval]}]
+(defn poll-gmail
+  "Polls emails from Gmail at regular intervals and returns a channel with new emails."
+  [{:keys [::gmail-service ::gmail-user-id]} {:keys [::poll-interval]}]
   ;; Poll emails from Gmail and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
