@@ -37,31 +37,31 @@
         response (.execute messages)]
     (map #(.getId %) (.getMessages response))))
 
-(defn poll-imap [imap-config config]
+(defn poll-imap [{:keys [::imap-host ::imap-user ::imap-password]} {:keys [::poll-interval]}]
   ;; Poll emails from IMAP and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
       (try
-        (let [emails (fetch-imap-emails (:host imap-config) (:user imap-config) (:password imap-config))]
+        (let [emails (fetch-imap-emails imap-host imap-user imap-password)]
           (doseq [email emails]
             (async/>! ch email)))
         (catch Exception e
           (log/error e "Error polling IMAP emails")))
-      (async/<! (async/timeout (::poll-interval config))) ;; Poll at configured interval
+      (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
       (recur))
     ch))
 
-(defn poll-gmail [gmail-config config]
+(defn poll-gmail [{:keys [::gmail-service ::gmail-user-id]} {:keys [::poll-interval]}]
   ;; Poll emails from Gmail and return a channel with new emails
   (let [ch (async/chan)]
     (async/go-loop []
       (try
-        (let [emails (fetch-gmail-emails (:service gmail-config) (:user-id gmail-config))]
+        (let [emails (fetch-gmail-emails gmail-service gmail-user-id)]
           (doseq [email emails]
             (async/>! ch email)))
         (catch Exception e
           (log/error e "Error polling Gmail emails")))
-      (async/<! (async/timeout (::poll-interval config))) ;; Poll at configured interval
+      (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
       (recur))
     ch))
 
