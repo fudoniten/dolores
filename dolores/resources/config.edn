@@ -36,3 +36,17 @@
 
   (generate-text [this prompt]
     "Generate text based on the given prompt."))
+(ns dolores.utils.storage
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]))
+
+(defn read-edn-file [file-path]
+  "Read data from an EDN file."
+  (with-open [r (io/reader file-path)]
+    (edn/read r)))
+
+(defn write-edn-file [file-path data]
+  "Write data to an EDN file."
+  (with-open [w (io/writer file-path)]
+    (binding [*print-dup* true]
+      (prn data w))))
