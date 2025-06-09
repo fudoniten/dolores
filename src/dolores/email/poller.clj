@@ -31,7 +31,13 @@
         credential (.authorize flow "user")]
     credential))
 
-(defn- fetch-gmail-emails [service user-id]
+(defn- refresh-gmail-token [credential]
+  ;; Function to refresh Gmail API access token
+  (try
+    (.refreshToken credential)
+    (log/info "Gmail access token refreshed successfully.")
+    (catch Exception e
+      (log/error e "Failed to refresh Gmail access token"))))
   ;; Function to fetch emails using Gmail API
   (let [messages (.list (.users service) user-id)
         response (.execute messages)]
