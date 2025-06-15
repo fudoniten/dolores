@@ -18,20 +18,22 @@ Adopt a microservices architecture to allow independent deployment and scaling o
 - **Monolithic Architecture:** Easier to develop initially but poses scalability challenges.
 - **Serverless Architecture:** Offers scalability but may lead to higher costs and complexity in managing stateful services.
 
-## Decision 2: [Title of Decision]
-- **Date:** [Date of Decision]
-- **Status:** [Accepted/Rejected/Deprecated]
+## Decision 2: Adoption of Continuous Integration/Continuous Deployment (CI/CD)
+- **Date:** 2025-06-16
+- **Status:** Accepted
 
 ### Context
-[Provide context for the decision, including any relevant background information.]
+To improve the efficiency and reliability of the software development process, there is a need to automate the build, test, and deployment pipeline. The current manual processes are error-prone and slow down the release cycle.
 
 ### Decision
-[Describe the decision that was made.]
+Implement a CI/CD pipeline using Jenkins and Docker to automate the build, test, and deployment processes. This will enable faster and more reliable releases.
 
 ### Consequences
-[Explain the consequences of the decision, both positive and negative.]
+- **Positive:** Reduced time to market, improved code quality, and faster feedback loops.
+- **Negative:** Initial setup and maintenance require additional resources and expertise.
 
 ### Alternatives Considered
-[List and briefly describe any alternatives that were considered.]
+- **Manual Deployment:** Simple but prone to human error and delays.
+- **Using GitHub Actions:** Offers integration with GitHub but lacks some advanced features needed for our specific use case.
 
 [Continue documenting additional decisions as needed.]
