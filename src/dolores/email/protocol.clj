@@ -13,7 +13,8 @@
 (s/def ::bcc (s/coll-of string? :kind vector?))
 (s/def ::attachments (s/coll-of string? :kind vector?))
 (s/def ::header (s/keys :req-un [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
-(s/def ::email (s/keys :req-un [::header ::body ::attachments]))
+(s/def ::email-header (s/keys :req-un [::header]))
+(s/def ::email-full (s/keys :req-un [::header ::body ::attachments]))
 
 (defprotocol DoloresEmailService
   "Protocol for email services to fetch headers and emails."
