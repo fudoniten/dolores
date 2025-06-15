@@ -36,5 +36,5 @@
   (try
     ;; Implement label management logic here
     (log/info "Labels managed successfully."))
-    (catch Exception e
-      (log/error e "Failed to manage labels"))))
+  (catch Exception e
+    (log/error e "Failed to manage labels"))))
