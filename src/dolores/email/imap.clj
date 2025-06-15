@@ -16,7 +16,9 @@
           (.connect store host user password)
           (let [inbox (.getFolder store "INBOX")]
             (.open inbox Folder/READ_ONLY)
-            (let [messages (.search inbox (FlagTerm. (Flags. Flags$Flag/SEEN) false))]
+            (let [since-date (java.util.Date. (.getTime since))
+                  search-term (javax.mail.search.ReceivedDateTerm. javax.mail.search.ComparisonTerm/GT since-date)
+                  messages (.search inbox search-term)]
               (map (fn [msg]
                      (let [header {::email/to (or (first (.getRecipients msg javax.mail.Message$RecipientType/TO)) "")
                                    ::email/from (or (first (.getFrom msg)) "")
@@ -69,7 +71,9 @@
           (.connect store host user password)
           (let [inbox (.getFolder store "INBOX")]
             (.open inbox Folder/READ_ONLY)
-            (let [messages (.getMessages inbox)]
+            (let [since-date (java.util.Date. (.getTime since))
+                  search-term (javax.mail.search.ReceivedDateTerm. javax.mail.search.ComparisonTerm/GT since-date)
+                  messages (.search inbox search-term)]
               (map (fn [msg]
                      (let [header {::email/to (.getRecipients msg javax.mail.Message$RecipientType/TO)
                                    ::email/from (.getFrom msg)
