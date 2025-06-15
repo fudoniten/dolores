@@ -16,15 +16,15 @@
           (.connect store host user password)
           (let [inbox (.getFolder store "INBOX")]
             (.open inbox Folder/READ_ONLY)
-            (let [messages (.getMessages inbox)]
+            (let [messages (.search inbox (FlagTerm. (Flags. Flags$Flag/SEEN) false))]
               (map (fn [msg]
-                     (let [header {:to (.getRecipients msg javax.mail.Message$RecipientType/TO)
-                                   :from (.getFrom msg)
-                                   :subject (.getSubject msg)
-                                   :cc (.getRecipients msg javax.mail.Message$RecipientType/CC)
-                                   :bcc (.getRecipients msg javax.mail.Message$RecipientType/BCC)
-                                   :sent-date (.getSentDate msg)
-                                   :received-date (.getReceivedDate msg)
+                     (let [header {:to (or (first (.getRecipients msg javax.mail.Message$RecipientType/TO)) "")
+                                   :from (or (first (.getFrom msg)) "")
+                                   :subject (or (.getSubject msg) "")
+                                   :cc (or (map str (.getRecipients msg javax.mail.Message$RecipientType/CC)) [])
+                                   :bcc (or (map str (.getRecipients msg javax.mail.Message$RecipientType/BCC)) [])
+                                   :sent-date (or (.getSentDate msg) (java.util.Date.))
+                                   :received-date (or (.getReceivedDate msg) (java.util.Date.))
                                    :spam-score 0.0 ;; Default spam score
                                    :server-info "IMAP Server"}]
                        (if (s/valid? ::email-header header)
