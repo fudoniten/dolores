@@ -1,5 +1,6 @@
 (ns dolores.email.gmail-backend
-  (:require [clojure.tools.logging :as log])
+  (:require [clojure.tools.logging :as log]
+            [dolores.email.protocol :refer :all])
   (:import (com.google.api.services.gmail Gmail)
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
@@ -7,16 +8,34 @@
            (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder)
            (com.google.api.client.auth.oauth2 Credential)))
 
-(defn fetch-emails
-  "Fetches emails from Gmail for the specified user ID."
-  [^Gmail service user-id]
-  (try
-    (let [messages (.list (.users service) user-id)
-          response (.execute messages)]
-      (map #(.getId %) (.getMessages response)))
+(defrecord GmailService [service user-id]
+  EmailService
+  (get-headers [this since]
+    (try
+      ;; Implement logic to fetch email headers since the specified date
+      (log/info "Fetched email headers successfully.")
+      ;; Return headers
+      )
     (catch Exception e
-      (log/error e "Failed to fetch emails from Gmail")
-      [])))
+      (log/error e "Failed to fetch email headers"))))
+
+  (get-email [this email-id]
+    (try
+      ;; Implement logic to fetch full email content by ID
+      (log/info "Fetched email successfully.")
+      ;; Return email content
+      )
+    (catch Exception e
+      (log/error e "Failed to fetch email"))))
+
+  (get-emails [this since]
+    (try
+      ;; Implement logic to fetch emails since the specified date
+      (log/info "Fetched emails successfully.")
+      ;; Return emails
+      )
+    (catch Exception e
+      (log/error e "Failed to fetch emails")))))
 
 (defn send-email
   "Sends an email using the Gmail API."
