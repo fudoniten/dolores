@@ -7,7 +7,7 @@
 
 (defrecord IMAPService [host user password]
   DoloresEmailService
-  (get-headers [this since]
+  (get-headers [_ since]
     (try
       (let [props (System/getProperties)]
         (.put props "mail.store.protocol" "imaps")
@@ -36,7 +36,7 @@
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
 
-  (get-email [this email-id]
+  (get-email [_ email-id]
     (try
       (let [props (System/getProperties)]
         (.put props "mail.store.protocol" "imaps")
@@ -44,6 +44,7 @@
               store (.getStore session "imaps")]
           (.connect store host user password)
           (let [inbox (.getFolder store "INBOX")]
+            (.open inbox Folder/READ_ONLY)
             (let [msg (first (filter #(= (.getMessageID %) email-id) (.getMessages inbox)))
                   header {::email/to (.getRecipients msg javax.mail.Message$RecipientType/TO)
                           ::email/from (.getFrom msg)
@@ -62,7 +63,7 @@
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
-  (get-emails [this since]
+  (get-emails [_ since]
     (try
       (let [props (System/getProperties)]
         (.put props "mail.store.protocol" "imaps")
