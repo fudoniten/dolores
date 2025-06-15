@@ -6,6 +6,7 @@
            (com.google.api.services.gmail.model ListMessagesResponse)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
            (com.google.api.client.json.jackson2 JacksonFactory)
+           (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder)
            (com.google.api.client.auth.oauth2 Credential)))
 
 (defn- fetch-imap-emails
