@@ -38,24 +38,29 @@
   [{:keys [::host ::user ::password]}]
   (->ImapService (-create-connection! host user password)))
 
+(defn parse-email
+  "Converts a javax.mail.Message to the internal email format."
+  [msg]
+  (let [header {::email/to (or (first (.getRecipients msg Message$RecipientType/TO)) "")
+                ::email/from (or (first (.getFrom msg)) "")
+                ::email/subject (or (.getSubject msg) "")
+                ::email/cc (or (map str (.getRecipients msg Message$RecipientType/CC)) [])
+                ::email/bcc (or (map str (.getRecipients msg Message$RecipientType/BCC)) [])
+                ::email/sent-date (or (.getSentDate msg) (java.util.Date.))
+                ::email/received-date (or (.getReceivedDate msg) (java.util.Date.))
+                ::email/spam-score 0.0 ;; Default spam score
+                ::email/server-info "IMAP Server"}
+        body (.getContent msg)
+        email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
+    (if (s/valid? ::email/email-full email)
+      email
+      (throw (ex-info "Invalid email" {:email email})))))
+
 (defrecord IMAPServiceWrapper [raw-ops]
   DoloresEmailService
   (get-headers [_ since]
     (try
-      (let [messages (search-emails raw-ops since)
-            parse-email (fn [msg]
-                          (let [header {::email/to (or (first (.getRecipients msg Message$RecipientType/TO)) "")
-                                        ::email/from (or (first (.getFrom msg)) "")
-                                        ::email/subject (or (.getSubject msg) "")
-                                        ::email/cc (or (map str (.getRecipients msg Message$RecipientType/CC)) [])
-                                        ::email/bcc (or (map str (.getRecipients msg Message$RecipientType/BCC)) [])
-                                        ::email/sent-date (or (.getSentDate msg) (java.util.Date.))
-                                        ::email/received-date (or (.getReceivedDate msg) (java.util.Date.))
-                                        ::email/spam-score 0.0 ;; Default spam score
-                                        ::email/server-info "IMAP Server"}]
-                            (if (s/valid? ::email/email-header header)
-                              header
-                              (throw (ex-info "Invalid email header" {:header header})))))]
+      (let [messages (search-emails raw-ops since)]
         (map parse-email messages))
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
@@ -63,20 +68,7 @@
   (get-email [_ email-id]
     (try
       (let [msg (get-email-content raw-ops email-id)
-            header {::email/to (.getRecipients msg Message$RecipientType/TO)
-                    ::email/from (.getFrom msg)
-                    ::email/subject (.getSubject msg)
-                    ::email/cc (.getRecipients msg Message$RecipientType/CC)
-                    ::email/bcc (.getRecipients msg Message$RecipientType/BCC)
-                    ::email/sent-date (.getSentDate msg)
-                    ::email/received-date (.getReceivedDate msg)
-                    ::email/spam-score 0.0 ;; Default spam score
-                    ::email/server-info "IMAP Server"}
-            body (.getContent msg)
-            email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
-        (if (s/valid? ::email/email-full email)
-          email
-          (throw (ex-info "Invalid email" {:email email}))))
+        (parse-email msg)
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
@@ -84,20 +76,7 @@
     (try
       (let [messages (search-emails raw-ops since)]
         (map (fn [msg]
-               (let [header {::email/to (.getRecipients msg Message$RecipientType/TO)
-                             ::email/from (.getFrom msg)
-                             ::email/subject (.getSubject msg)
-                             ::email/cc (.getRecipients msg Message$RecipientType/CC)
-                             ::email/bcc (.getRecipients msg Message$RecipientType/BCC)
-                             ::email/sent-date (.getSentDate msg)
-                             ::email/received-date (.getReceivedDate msg)
-                             ::email/spam-score 0.0 ;; Default spam score
-                             ::email/server-info "IMAP Server"}
-                     body (.getContent msg)
-                     email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
-                 (if (s/valid? ::email/email-full email)
-                   email
-                   (throw (ex-info "Invalid email" {:email email})))))
+        (parse-email msg)
              messages))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
