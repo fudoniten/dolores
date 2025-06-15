@@ -31,9 +31,14 @@
         json-factory (JacksonFactory/getDefaultInstance)
         flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
                  (.setAccessType "offline")
-                 (.build))
-        credential (.authorize flow "user")]
-    credential))
+                 (.build))]
+    (try
+      (let [credential (.authorize flow "user")]
+        (log/info "Gmail credentials obtained successfully.")
+        credential)
+      (catch Exception e
+        (log/error e "Failed to obtain Gmail credentials")
+        nil))))
 
 (defn- refresh-gmail-token
   "Refreshes the Gmail API access token using the provided credential object."
