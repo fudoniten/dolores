@@ -36,4 +36,20 @@ Implement a CI/CD pipeline using Jenkins and Docker to automate the build, test,
 - **Manual Deployment:** Simple but prone to human error and delays.
 - **Using GitHub Actions:** Offers integration with GitHub but lacks some advanced features needed for our specific use case.
 
-[Continue documenting additional decisions as needed.]
+## Decision 3: Selection of NoSQL Database for Scalability
+- **Date:** 2025-06-17
+- **Status:** Accepted
+
+### Context
+The application needs to handle a large volume of unstructured data with high read and write throughput. Traditional relational databases are not well-suited for this requirement due to their schema constraints and scalability limitations.
+
+### Decision
+Adopt a NoSQL database, specifically MongoDB, to store unstructured data. MongoDB's document-oriented model and horizontal scaling capabilities make it a suitable choice for our needs.
+
+### Consequences
+- **Positive:** Enhanced scalability, flexibility in data modeling, and improved performance for read/write operations.
+- **Negative:** Requires learning curve for developers unfamiliar with NoSQL paradigms and potential challenges in ensuring data consistency.
+
+### Alternatives Considered
+- **Relational Database (e.g., PostgreSQL):** Offers strong consistency but lacks flexibility and scalability for unstructured data.
+- **Other NoSQL Databases (e.g., Cassandra):** Provides scalability but lacks the document-oriented model that suits our use case.
