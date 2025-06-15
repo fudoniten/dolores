@@ -5,8 +5,15 @@
 (s/def ::from string?)
 (s/def ::subject string?)
 (s/def ::body string?)
-(s/def ::header (s/keys :req-un [::to ::from ::subject]))
-(s/def ::email (s/keys :req-un [::header ::body]))
+(s/def ::sent-date inst?)
+(s/def ::received-date inst?)
+(s/def ::spam-score number?)
+(s/def ::server-info string?)
+(s/def ::cc (s/coll-of string? :kind vector?))
+(s/def ::bcc (s/coll-of string? :kind vector?))
+(s/def ::attachments (s/coll-of string? :kind vector?))
+(s/def ::header (s/keys :req-un [::to ::from ::subject ::cc ::bcc]))
+(s/def ::email (s/keys :req-un [::header ::body ::sent-date ::received-date ::spam-score ::server-info ::attachments]))
 
 (defprotocol DoloresEmailService
   "Protocol for email services to fetch headers and emails."
