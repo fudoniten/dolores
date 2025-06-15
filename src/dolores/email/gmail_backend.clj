@@ -35,7 +35,7 @@
       ;; Return emails
       )
     (catch Exception e
-      (log/error e "Failed to fetch emails")))))
+      (log/error e "Failed to fetch emails"))))
 
 (defn send-email
   "Sends an email using the Gmail API."
