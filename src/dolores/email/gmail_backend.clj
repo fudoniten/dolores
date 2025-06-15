@@ -35,6 +35,6 @@
   [^Gmail service user-id message-id labels]
   (try
     ;; Implement label management logic here
-    (log/info "Labels managed successfully."))
-  (catch Exception e
-    (log/error e "Failed to manage labels"))))
+    (log/info "Labels managed successfully.")
+    (catch Exception e
+      (log/error e "Failed to manage labels"))))
