@@ -1,6 +1,6 @@
 (ns dolores.email.imap
   (:require [clojure.tools.logging :as log]
-            [dolores.email.protocol :refer :all])
+            [dolores.email.protocol :refer [DoloresEmailService]])
   (:import (javax.mail Session Store Folder Flags)
            (javax.mail.search FlagTerm)))
 
@@ -25,9 +25,8 @@
       ;; Implement logic to fetch full email content by ID
       (log/info "Fetched email successfully.")
       ;; Return email content
-      )
-    (catch Exception e
-      (log/error e "Failed to fetch email"))))
+      (catch Exception e
+        (log/error e "Failed to fetch email"))))
 
   (get-emails [this since]
     (try
