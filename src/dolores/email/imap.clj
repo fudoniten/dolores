@@ -36,7 +36,9 @@
       (.connect store host user password)
       store)))
 
-(defn parse-email
+(s/fdef parse-email
+  :args (s/cat :msg (s/instance? javax.mail.Message))
+  :ret (s/nilable ::email/email-full))
   "Converts a javax.mail.Message to the internal email format."
   [msg]
   (let [header {::email/to (str (or (first (.getRecipients msg Message$RecipientType/TO)) ""))
@@ -70,7 +72,9 @@
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
-(defn connect!
+(s/fdef connect!
+  :args (s/keys :req-un [::email/host ::email/user ::email/password])
+  :ret (s/nilable ImapService))
   [{:keys [::host ::user ::password]}]
   (verify-args {:host host :user user :password password} [:host :user :password])
   (->ImapService (->RawImapService (-create-connection! host user password))))
