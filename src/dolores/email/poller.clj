@@ -62,12 +62,16 @@
   "Polls emails from an IMAP server at regular intervals and returns a channel with new emails."
   [{:keys [::imap-host ::imap-user ::imap-password]} {:keys [::poll-interval]}]
   ;; Poll emails from IMAP and return a channel with new emails
-  (let [ch (async/chan)]
+  (let [ch (async/chan)
+        processed-ids (atom #{})]
     (async/go-loop []
       (try
         (let [emails (fetch-imap-emails imap-host imap-user imap-password)]
           (doseq [email emails]
-            (async/>! ch email)))
+            (let [email-id (get-email-id email)] ;; Assume get-email-id extracts the ID
+              (when-not (contains? @processed-ids email-id)
+                (swap! processed-ids conj email-id)
+                (async/>! ch email)))))
         (catch Exception e
           (log/error e "Error polling IMAP emails")))
       (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
@@ -78,12 +82,16 @@
   "Polls emails from Gmail at regular intervals and returns a channel with new emails."
   [{:keys [::gmail-service ::gmail-user-id]} {:keys [::poll-interval]}]
   ;; Poll emails from Gmail and return a channel with new emails
-  (let [ch (async/chan)]
+  (let [ch (async/chan)
+        processed-ids (atom #{})]
     (async/go-loop []
       (try
         (let [emails (fetch-gmail-emails gmail-service gmail-user-id)]
           (doseq [email emails]
-            (async/>! ch email)))
+            (let [email-id (get-email-id email)] ;; Assume get-email-id extracts the ID
+              (when-not (contains? @processed-ids email-id)
+                (swap! processed-ids conj email-id)
+                (async/>! ch email)))))
         (catch Exception e
           (log/error e "Error polling Gmail emails")))
       (async/<! (async/timeout poll-interval)) ;; Poll at configured interval
