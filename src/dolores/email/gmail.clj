@@ -22,8 +22,8 @@
                      message (.execute (.users.messages.get service user-id message-id))
                      payload (.getPayload message)
                      headers (.getHeaders payload)
-                     header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
-                             ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
+                     header {::email/to (or (some #(when (= "To" (.getName %)) (str (.getValue %))) headers) "")
+                             ::email/from (or (some #(when (= "From" (.getName %)) (str (.getValue %))) headers) "")
                              ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
                              ::email/cc []
                              ::email/bcc []
