@@ -20,7 +20,8 @@
 
 (defn parse-gmail-email
   "Converts a Gmail Message to the internal email format."
-  [message]
+  [^Message message]
+  (s/assert ::email/gmail-message message)
   (let [payload (.getPayload message)
         headers (.getHeaders payload)
         body (or (.getData (.getBody payload)) "")

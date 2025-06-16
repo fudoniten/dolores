@@ -1,5 +1,8 @@
 (ns dolores.email.protocol
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [com.google.api.services.gmail.model Message]))
+
+(s/def ::gmail-message (s/instance? Message))
 
 (s/def ::to string?)
 (s/def ::from string?)
