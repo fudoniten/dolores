@@ -17,21 +17,7 @@
   (fetch-email [this email-id])
   (fetch-emails [this query]))
 
-(s/fdef get-gmail-credentials
-  :args (s/cat :client-id ::email/client-id :client-secret ::email/client-secret)
-  :ret (s/nilable ::email/credential))
-
-(s/fdef refresh-gmail-token
-  :args (s/cat :credential ::email/credential)
-  :ret (s/nilable ::email/credential))
-
-(s/fdef refresh-token-if-needed
-  :args (s/cat :credential ::email/credential :max-age ::email/max-age)
-  :ret (s/nilable ::email/credential))
-
-(s/fdef connect!
-  :args (s/keys :req-un [::email/client-id ::email/client-secret ::email/user-id])
-  :ret (s/nilable RawGmailService))
+(defn parse-gmail-email
   "Converts a Gmail Message to the internal email format."
   [^Message message]
   (s/assert ::email/gmail-message message)
@@ -54,6 +40,9 @@
       (do (s/explain-data ::email/email-full email)
           (throw (ex-info "Invalid email" {:email email}))))))
 
+(s/fdef get-gmail-credentials
+  :args (s/cat :client-id ::email/client-id :client-secret ::email/client-secret)
+  :ret (s/nilable ::email/credential))
 (defn get-gmail-credentials
   "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
   [client-id client-secret]
@@ -77,6 +66,9 @@
   (let [creation-time (.getExpirationTimeMilliseconds credential)]
     (- (System/currentTimeMillis) creation-time)))
 
+(s/fdef refresh-gmail-token
+  :args (s/cat :credential ::email/credential)
+  :ret (s/nilable ::email/credential))
 (defn refresh-gmail-token
   "Refreshes the Gmail API access token using the provided credential object."
   [credential]
@@ -88,6 +80,9 @@
     (catch Exception e
       (log/error e "Failed to refresh Gmail access token"))))
 
+(s/fdef refresh-token-if-needed
+  :args (s/cat :credential ::email/credential :max-age ::email/max-age)
+  :ret (s/nilable ::email/credential))
 (defn refresh-token-if-needed
   "Refreshes the token if it is older than the specified max-age."
   [credential max-age]
@@ -125,6 +120,9 @@
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
+(s/fdef connect!
+  :args (s/keys :req-un [::email/client-id ::email/client-secret ::email/user-id])
+  :ret (s/nilable RawGmailService))
 (defn connect!
   "Authenticates with Gmail and creates a RawGmailService."
   [& {:keys [client-id client-secret user-id]}]
