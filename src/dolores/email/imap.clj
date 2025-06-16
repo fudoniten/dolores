@@ -20,6 +20,9 @@
         (if headers-only
           (map #(doto % (.setFlags (Flags. Flags$Flag/SEEN) false)) messages)
           messages))))
+        (if headers-only
+          (map #(doto % (.setFlags (Flags. Flags$Flag/SEEN) false)) messages)
+          messages))))
 
   (get-email-content [_ email-id]
     (let [inbox (.getFolder store "INBOX")]
