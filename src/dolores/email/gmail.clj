@@ -21,8 +21,8 @@
             header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
                     ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
                     ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                    ::email/cc []
-                    ::email/bcc []
+                    ::email/cc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/CC)) []))
+                    ::email/bcc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/BCC)) []))
                     ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
                     ::email/received-date (or (.getInternalDate message) (java.util.Date.))
                     ::email/spam-score 0.0
@@ -51,8 +51,8 @@
                      header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
                              ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
                              ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                             ::email/cc []
-                             ::email/bcc []
+                             ::email/cc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/CC)) []))
+                             ::email/bcc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/BCC)) []))
                              ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
                              ::email/received-date (or (.getInternalDate message) (java.util.Date.))
                              ::email/spam-score 0.0

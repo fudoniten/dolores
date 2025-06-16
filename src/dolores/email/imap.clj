@@ -37,8 +37,8 @@
   (let [header {::email/to (str (or (first (.getRecipients msg Message$RecipientType/TO)) ""))
                 ::email/from (str (or (first (.getFrom msg)) ""))
                 ::email/subject (or (.getSubject msg) "")
-                ::email/cc (or (map str (.getRecipients msg Message$RecipientType/CC)) [])
-                ::email/bcc (or (map str (.getRecipients msg Message$RecipientType/BCC)) [])
+                ::email/cc (vec (or (map str (.getRecipients msg Message$RecipientType/CC)) []))
+                ::email/bcc (vec (or (map str (.getRecipients msg Message$RecipientType/BCC)) []))
                 ::email/sent-date (or (.getSentDate msg) (java.util.Date.))
                 ::email/received-date (or (.getReceivedDate msg) (java.util.Date.))
                 ::email/spam-score 0.0 ;; Default spam score
