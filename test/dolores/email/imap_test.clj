@@ -10,13 +10,14 @@
 
 (defn mock-mime-message
   "Creates a mock MimeMessage for testing."
-  [session to from subject]
+  [session & {:keys [to from subject body] :or {body ""}}]
   (doto (MimeMessage. session)
     (.setRecipients Message$RecipientType/TO to)
     (.setFrom from)
     (.setSubject subject)
     (.setSentDate (java.util.Date.))
-    (.setReceivedDate (java.util.Date.))))
+    (.setReceivedDate (java.util.Date.))
+    (.setContent body "text/plain")))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
