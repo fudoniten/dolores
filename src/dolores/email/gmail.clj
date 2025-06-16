@@ -76,9 +76,9 @@
   [^Gmail service user-id message-id labels]
   (try
     ;; Implement label management logic here
-    (log/info "Labels managed successfully.")
-    (catch Exception e
-      (log/error e "Failed to manage labels"))))
+    (log/info "Labels managed successfully."))
+  (catch Exception e
+    (log/error e "Failed to manage labels")))
 
 (defn get-gmail-credentials
   "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
