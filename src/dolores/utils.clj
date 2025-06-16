@@ -10,3 +10,11 @@
           (async/>! merged-ch email)
           (recur))))
     merged-ch))
+(ns dolores.utils)
+
+(defn verify-args
+  "Verifies that all required keys are present in the map."
+  [m required-keys]
+  (doseq [k required-keys]
+    (when (nil? (get m k))
+      (throw (ex-info (str "Missing required argument: " k) {:missing-key k})))))
