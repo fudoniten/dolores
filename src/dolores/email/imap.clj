@@ -52,12 +52,6 @@
 
 (defrecord ImapService [raw-service]
   DoloresEmailService
-  (get-headers [_ since]
-    (try
-      (let [messages (search-emails raw-service since)]
-        (map parse-email messages))
-      (catch Exception e
-        (log/error e "Failed to fetch email headers"))))
 
   (get-email [_ email-id]
     (try

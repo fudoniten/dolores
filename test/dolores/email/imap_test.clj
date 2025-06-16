@@ -36,12 +36,6 @@
                          :subject "Test Subject"
                          :body "Test Body"))))
 
-(deftest test-get-headers
-  (testing "Fetching email headers"
-    (let [raw-ops (mock-raw-email-operations)
-          imap-service (imap/->ImapService raw-ops)
-          headers (email/get-headers imap-service (Date.))]
-      (is (every? (partial s/valid? ::email/email-header) headers)))))
 
 (deftest test-get-email
   (testing "Fetching full email content"

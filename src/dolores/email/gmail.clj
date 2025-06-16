@@ -11,34 +11,6 @@
 
 (defrecord GmailService [service user-id]
   DoloresEmailService
-  (get-headers [this since]
-    (try
-      (let [query (str "after:" (.getTime since))
-            request (.users.messages.list service user-id)
-            response (.execute (.setQ request query))
-            messages (.getMessages response)]
-        (map (fn [msg]
-               (let [message-id (.getId msg)
-                     message (.execute (.users.messages.get service user-id message-id))
-                     payload (.getPayload message)
-                     headers (.getHeaders payload)
-                     header {::email/to (or (some #(when (= "To" (.getName %)) (str (.getValue %))) headers) "")
-                             ::email/from (or (some #(when (= "From" (.getName %)) (str (.getValue %))) headers) "")
-                             ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                             ::email/cc []
-                             ::email/bcc []
-                             ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
-                             ::email/received-date (or (.getInternalDate message) (java.util.Date.))
-                             ::email/spam-score 0.0
-                             ::email/server-info "Gmail Server"}]
-                 (if (s/valid? ::email/email-header header)
-                   header
-                   (do
-                     (s/explain ::email/email-header header)
-                     (throw (ex-info "Invalid email header" {:header header}))))))
-             messages))
-      (catch Exception e
-        (log/error e "Failed to fetch email headers"))))
 
   (get-email [this email-id]
     (try
