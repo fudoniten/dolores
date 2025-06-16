@@ -1,14 +1,7 @@
 (ns dolores.email.gmail
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
-            [dolores.email.protocol :refer [DoloresEmailService] :as email]))
-
-(defn verify-args
-  "Verifies that all required keys are present in the map."
-  [m required-keys]
-  (doseq [k required-keys]
-    (when (nil? (get m k))
-      (throw (ex-info (str "Missing required argument: " k) {:missing-key k})))))
+            [dolores.email.protocol :refer [DoloresEmailService] :as email])
   (:import (com.google.api.services.gmail Gmail$Builder)
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
@@ -16,6 +9,13 @@
            (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder)
            (com.google.api.client.auth.oauth2 Credential)
            (java.time Instant)))
+
+(defn verify-args
+  "Verifies that all required keys are present in the map."
+  [m required-keys]
+  (doseq [k required-keys]
+    (when (nil? (get m k))
+      (throw (ex-info (str "Missing required argument: " k) {:missing-key k})))))
 
 (defprotocol RawGmailOperations
   "Protocol for raw Gmail operations."
