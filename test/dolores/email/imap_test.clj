@@ -3,36 +3,35 @@
             [dolores.email.imap :as imap]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :as email])
-  (:import java.util.Date))
+  (:import (javax.mail.internet MimeMessage)
+           (javax.mail Session)
+           java.util.Date))
 
-(defn mock-email
-  "Creates a mock email message for testing."
-  [to from subject]
-  {:to to
-   :from from
-   :subject subject
-   :cc []
-   :bcc []
-   :sent-date (java.util.Date.)
-   :received-date (java.util.Date.)
-   :spam-score 0.0
-   :server-info "Mock Server"})
+(defn mock-mime-message
+  "Creates a mock MimeMessage for testing."
+  [session to from subject]
+  (doto (MimeMessage. session)
+    (.setRecipients Message$RecipientType/TO to)
+    (.setFrom from)
+    (.setSubject subject)
+    (.setSentDate (java.util.Date.))
+    (.setReceivedDate (java.util.Date.))))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
   []
   (reify imap/RawEmailOperations
     (search-emails [_ since]
-      [(mock-email "to@example.com" "from@example.com" "Test Subject")])
+      [(mock-mime-message (Session/getDefaultInstance (System/getProperties)) "to@example.com" "from@example.com" "Test Subject")])
     (get-email-content [_ email-id]
-      (mock-email "to@example.com" "from@example.com" "Test Subject"))))
+      (mock-mime-message (Session/getDefaultInstance (System/getProperties)) "to@example.com" "from@example.com" "Test Subject"))))
 
 (deftest test-get-headers
   (testing "Fetching email headers"
     (let [raw-ops (mock-raw-email-operations)
           imap-service (imap/->IMAPServiceWrapper raw-ops)
           headers (email/get-headers imap-service (Date.))]
-      (is (every? #(s/valid? ::email/email-header %) headers)))))
+      (is (every? #(s/valid? ::email/email-full %) headers)))))
 
 (deftest test-get-email
   (testing "Fetching full email content"
