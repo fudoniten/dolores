@@ -4,14 +4,12 @@
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
   (:import (javax.mail Session Folder Message$RecipientType)))
 
-(defn pthru [o] (clojure.pprint/pprint o) o)
-
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
   (search-emails [this since])
   (get-email-content [this email-id]))
 
-(defrecord ImapService [store]
+(defrecord RawImapService [store]
   RawEmailOperations
   (search-emails [_ since]
     (let [inbox (.getFolder store "INBOX")]
@@ -33,16 +31,11 @@
           store   (.getStore session "imaps")]
       (.connect store host user password)
       store)))
-
-(defn connect!
-  [{:keys [::host ::user ::password]}]
-  (->ImapService (-create-connection! host user password)))
-
 (defn parse-email
   "Converts a javax.mail.Message to the internal email format."
   [msg]
-  (let [header {::email/to (or (first (.getRecipients msg Message$RecipientType/TO)) "")
-                ::email/from (or (first (.getFrom msg)) "")
+  (let [header {::email/to (str (or (first (.getRecipients msg Message$RecipientType/TO)) ""))
+                ::email/from (str (or (first (.getFrom msg)) ""))
                 ::email/subject (or (.getSubject msg) "")
                 ::email/cc (or (map str (.getRecipients msg Message$RecipientType/CC)) [])
                 ::email/bcc (or (map str (.getRecipients msg Message$RecipientType/BCC)) [])
@@ -56,27 +49,27 @@
       email
       (throw (ex-info "Invalid email" {:email email})))))
 
-(defrecord IMAPServiceWrapper [raw-ops]
+(defrecord ImapService [raw-service]
   DoloresEmailService
   (get-headers [_ since]
     (try
-      (let [messages (search-emails raw-ops since)]
+      (let [messages (search-emails raw-service since)]
         (map parse-email messages))
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
 
   (get-email [_ email-id]
     (try
-      (let [msg (get-email-content raw-ops email-id)
-        (parse-email msg)
+      (parse-email (get-email-content raw-service email-id))
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
   (get-emails [_ since]
     (try
-      (let [messages (search-emails raw-ops since)]
-        (map (fn [msg]
-        (parse-email msg)
-             messages))
+      (map parse-email (search-emails raw-service since))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
+
+(defn connect!
+  [{:keys [::host ::user ::password]}]
+  (->ImapService (->RawImapService (-create-connection! host user password))))
