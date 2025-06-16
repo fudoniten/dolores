@@ -23,8 +23,8 @@
         header {::email/to (or (some #(when (= "To" (:name %)) (:value %)) headers) "")
                 ::email/from (or (some #(when (= "From" (:name %)) (:value %)) headers) "")
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
-                ::email/cc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/CC)) []))
-                ::email/bcc (vec (or (map str (.getRecipients payload javax.mail.Message$RecipientType/BCC)) []))
+                ::email/cc (vec (or (some #(when (= "Cc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
+                ::email/bcc (vec (or (some #(when (= "Bcc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
                 ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
                 ::email/received-date (or (.getInternalDate message) (java.util.Date.))
                 ::email/spam-score 0.0
