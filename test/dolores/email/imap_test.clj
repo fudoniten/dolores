@@ -10,9 +10,11 @@
 
 (defn mock-mime-message
   "Creates a mock MimeMessage for testing."
-  [session & {:keys [to from subject body] :or {body ""}}]
+  [session & {:keys [to from subject body cc bcc] :or {body "" cc [] bcc []}}]
   (doto (MimeMessage. session)
     (.setRecipients Message$RecipientType/TO to)
+    (.setRecipients Message$RecipientType/CC cc)
+    (.setRecipients Message$RecipientType/BCC bcc)
     (.setFrom from)
     (.setSubject subject)
     (.setSentDate (java.util.Date.))
@@ -34,7 +36,17 @@
                          :to "to@example.com"
                          :from "from@example.com"
                          :subject "Test Subject"
+                         :cc ["cc@example.com"]
+                         :bcc ["bcc@example.com"]
                          :body "Test Body"))))
+
+(deftest test-get-email-cc-bcc
+  (testing "Fetching email with CC and BCC"
+    (let [raw-ops (mock-raw-email-operations)
+          imap-service (imap/->ImapService raw-ops)
+          email (email/get-email imap-service "mock-id")]
+      (is (= ["cc@example.com"] (get-in email [::email/header ::email/cc])))
+      (is (= ["bcc@example.com"] (get-in email [::email/header ::email/bcc]))))))
 
 
 (deftest test-get-email
