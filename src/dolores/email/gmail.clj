@@ -35,9 +35,49 @@
         email {::email/header header ::email/body body ::email/attachments []}]
     (if (s/valid? ::email/email-full email)
       email
-      (do
-        (s/explain-data ::email/email-full email)
-        (throw (ex-info "Invalid email" {:email email}))))))
+      (do (s/explain-data ::email/email-full email)
+          (throw (ex-info "Invalid email" {:email email}))))))
+
+(defn get-gmail-credentials
+  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
+  [client-id client-secret]
+  ;; Function to get Gmail credentials using OAuth 2.0 without redirect URI
+  (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
+        json-factory (JacksonFactory/getDefaultInstance)
+        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
+                 (.setAccessType "offline")
+                 (.build))]
+    (try
+      (let [credential (.authorize flow "user")]
+        (log/info "Gmail credentials obtained successfully.")
+        credential)
+      (catch Exception e
+        (log/error e "Failed to obtain Gmail credentials")
+        nil))))
+
+(defn token-age
+  "Calculates the age of the token in milliseconds."
+  [credential]
+  (let [creation-time (.getExpirationTimeMilliseconds credential)]
+    (- (System/currentTimeMillis) creation-time)))
+
+(defn refresh-gmail-token
+  "Refreshes the Gmail API access token using the provided credential object."
+  [credential]
+  ;; Function to refresh Gmail API access token
+  (try
+    (.refreshToken credential)
+    (log/info "Gmail access token refreshed successfully.")
+    credential
+    (catch Exception e
+      (log/error e "Failed to refresh Gmail access token"))))
+
+(defn refresh-token-if-needed
+  "Refreshes the token if it is older than the specified max-age."
+  [credential max-age]
+  (when (> (token-age credential) max-age)
+    (refresh-gmail-token credential))
+  credential)
 
 (defrecord RawGmailService [service user-id]
   RawGmailOperations
@@ -69,54 +109,16 @@
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
-(defn get-gmail-credentials
-  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
-  [client-id client-secret]
-  ;; Function to get Gmail credentials using OAuth 2.0 without redirect URI
-  (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
-        json-factory (JacksonFactory/getDefaultInstance)
-        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
-                 (.setAccessType "offline")
-                 (.build))]
-    (try
-      (let [credential (.authorize flow "user")]
-        (log/info "Gmail credentials obtained successfully.")
-        credential)
-      (catch Exception e
-        (log/error e "Failed to obtain Gmail credentials")
-        nil))))
-
 (defn connect!
   "Authenticates with Gmail and creates a RawGmailService."
-  [{:keys [client-id client-secret user-id]}]
+  [& {:keys [client-id client-secret user-id]}]
   (verify-args {:client-id client-id :client-secret client-secret :user-id user-id} [:client-id :client-secret :user-id])
   (let [credentials (get-gmail-credentials client-id client-secret)
-        max-token-age (* 60 60 1000) ;; 1 hour in milliseconds
-        _ (refresh-token-if-needed credentials max-token-age)
-        _ (when (not (.isTokenValid? credentials))
-            (refresh-gmail-token credentials))
-        service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
-                                (JacksonFactory/getDefaultInstance)
-                                credentials)
-        gmail-service (.build service)]
-    (->RawGmailService gmail-service user-id)))
-
-(defn token-age
-  "Calculates the age of the token in milliseconds."
-  [credential]
-  (let [creation-time (.getExpirationTimeMilliseconds credential)]
-    (- (System/currentTimeMillis) creation-time)))
-
-(defn refresh-token-if-needed
-  "Refreshes the token if it is older than the specified max-age."
-  [credential max-age]
-  (when (> (token-age credential) max-age)
-    (refresh-gmail-token credential)))
-  "Refreshes the Gmail API access token using the provided credential object."
-  [credential]
-  ;; Function to refresh Gmail API access token
-  (try
-    (.refreshToken credential)
-    (log/info "Gmail access token refreshed successfully.")
-    (catch Exception e
-      (log/error e "Failed to refresh Gmail access token"))))
+        ;; 1 hr in ms
+        max-token-age (* 60 60 1000)]
+    (refresh-token-if-needed credentials max-token-age)
+    (let [service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
+                                  (JacksonFactory/getDefaultInstance)
+                                  credentials)
+          gmail-service (.build service)]
+      (->RawGmailService gmail-service user-id))))
