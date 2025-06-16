@@ -91,6 +91,8 @@
   [{:keys [client-id client-secret user-id]}]
   (verify-args {:client-id client-id :client-secret client-secret :user-id user-id} [:client-id :client-secret :user-id])
   (let [credentials (get-gmail-credentials client-id client-secret)
+        max-token-age (* 60 60 1000) ;; 1 hour in milliseconds
+        _ (refresh-token-if-needed credentials max-token-age)
         _ (when (not (.isTokenValid? credentials))
             (refresh-gmail-token credentials))
         service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
@@ -99,7 +101,17 @@
         gmail-service (.build service)]
     (->RawGmailService gmail-service user-id)))
 
-(defn refresh-gmail-token
+(defn token-age
+  "Calculates the age of the token in milliseconds."
+  [credential]
+  (let [creation-time (.getExpirationTimeMilliseconds credential)]
+    (- (System/currentTimeMillis) creation-time)))
+
+(defn refresh-token-if-needed
+  "Refreshes the token if it is older than the specified max-age."
+  [credential max-age]
+  (when (> (token-age credential) max-age)
+    (refresh-gmail-token credential)))
   "Refreshes the Gmail API access token using the provided credential object."
   [credential]
   ;; Function to refresh Gmail API access token
