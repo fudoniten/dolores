@@ -12,9 +12,9 @@
 (s/def ::cc (s/coll-of string? :kind vector?))
 (s/def ::bcc (s/coll-of string? :kind vector?))
 (s/def ::attachments (s/coll-of string? :kind vector?))
-(s/def ::header (s/keys :req-un [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
-(s/def ::email-header (s/keys :req-un [::header]))
-(s/def ::email-full (s/keys :req-un [::header ::body ::attachments]))
+(s/def ::header (s/keys :req [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
+(s/def ::email-header (s/keys :req [::header]))
+(s/def ::email-full (s/keys :req [::header ::body ::attachments]))
 
 (defprotocol DoloresEmailService
   "Protocol for email services to fetch headers and emails."
@@ -25,8 +25,6 @@
 
 (defprotocol DoloresEmailService
   "Protocol for email services to fetch headers and emails."
-  (get-headers [this since]
-    "Fetches a list of email headers since the specified date.")
   (get-email [this email-id]
     "Fetches the full content of a specific email by ID.")
   (get-emails [this since]
