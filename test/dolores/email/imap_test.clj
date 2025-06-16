@@ -24,9 +24,15 @@
   []
   (reify imap/RawEmailOperations
     (search-emails [_ since]
-      [(mock-mime-message (Session/getDefaultInstance (System/getProperties)) "to@example.com" "from@example.com" "Test Subject")])
+      [(mock-mime-message (Session/getDefaultInstance (System/getProperties))
+                          :to "to@example.com"
+                          :from "from@example.com"
+                          :subject "Test Subject")])
     (get-email-content [_ email-id]
-      (mock-mime-message (Session/getDefaultInstance (System/getProperties)) "to@example.com" "from@example.com" "Test Subject"))))
+      (mock-mime-message (Session/getDefaultInstance (System/getProperties))
+                         :to "to@example.com"
+                         :from "from@example.com"
+                         :subject "Test Subject"))))
 
 (deftest test-get-headers
   (testing "Fetching email headers"
