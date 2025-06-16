@@ -3,8 +3,10 @@
             [dolores.utils :refer [verify-args]]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
-  (:import (javax.mail Session Folder Message$RecipientType)))
-
+  (:import (javax.mail Session Folder Message$RecipientType)
+           (javax.mail.search ReceivedDateTerm ComparisonTerm)
+           java.util.Date
+           java.time.Instant))
 
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
@@ -16,8 +18,8 @@
   (search-emails [_ since]
     (let [inbox (.getFolder store "INBOX")]
       (.open inbox Folder/READ_ONLY)
-      (let [since-date (java.util.Date. (.getTime since))
-            search-term (javax.mail.search.ReceivedDateTerm. javax.mail.search.ComparisonTerm/GT since-date)]
+      (let [since-date (Date. (.getTime since))
+            search-term (ReceivedDateTerm. ComparisonTerm/GT since-date)]
         (.search inbox search-term))))
 
   (get-email-content [_ email-id]
@@ -33,6 +35,7 @@
           store   (.getStore session "imaps")]
       (.connect store host user password)
       store)))
+
 (defn parse-email
   "Converts a javax.mail.Message to the internal email format."
   [msg]
