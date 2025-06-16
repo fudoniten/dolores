@@ -20,7 +20,7 @@
                                  {:name "Bcc" :value (clojure.string/join ", " bcc)}])
                    (.setBody (doto (com.google.api.services.gmail.model.MessagePartBody.)
                                (.setData body)))))
-    (.setInternalDate message (DateTime. (System/currentTimeMillis)))
+    (.setInternalDate message (DateTime. (System/currentTimeMillis) nil))
     message))
 
 (defn mock-raw-gmail-operations
