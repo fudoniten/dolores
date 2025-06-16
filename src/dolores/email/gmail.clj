@@ -17,7 +17,21 @@
   (fetch-email [this email-id])
   (fetch-emails [this query]))
 
-(defn parse-gmail-email
+(s/fdef get-gmail-credentials
+  :args (s/cat :client-id ::email/client-id :client-secret ::email/client-secret)
+  :ret (s/nilable ::email/credential))
+
+(s/fdef refresh-gmail-token
+  :args (s/cat :credential ::email/credential)
+  :ret (s/nilable ::email/credential))
+
+(s/fdef refresh-token-if-needed
+  :args (s/cat :credential ::email/credential :max-age ::email/max-age)
+  :ret (s/nilable ::email/credential))
+
+(s/fdef connect!
+  :args (s/keys :req-un [::email/client-id ::email/client-secret ::email/user-id])
+  :ret (s/nilable RawGmailService))
   "Converts a Gmail Message to the internal email format."
   [^Message message]
   (s/assert ::email/gmail-message message)

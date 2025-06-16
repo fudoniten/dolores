@@ -2,7 +2,11 @@
   (:require [clojure.spec.alpha :as s]
             [com.google.api.services.gmail.model Message]))
 
-(s/def ::gmail-message (s/instance? Message))
+(s/def ::client-id string?)
+(s/def ::client-secret string?)
+(s/def ::user-id string?)
+(s/def ::credential (s/keys :req-un [::client-id ::client-secret]))
+(s/def ::max-age pos-int?)
 
 (s/def ::to string?)
 (s/def ::from string?)
