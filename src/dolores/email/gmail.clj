@@ -41,10 +41,14 @@
 
 (defrecord RawGmailService [service user-id]
   RawGmailOperations
-  (fetch-email [_ email-id]
+  (fetch-email [this email-id]
+    (when (not (.isTokenValid? service))
+      (refresh-gmail-token (.getCredentials service)))
     (.execute (.users.messages.get service user-id email-id)))
 
-  (fetch-emails [_ query]
+  (fetch-emails [this query]
+    (when (not (.isTokenValid? service))
+      (refresh-gmail-token (.getCredentials service)))
     (let [request (.users.messages.list service user-id)
           response (.execute (.setQ request query))]
       (.getMessages response))))
@@ -87,6 +91,8 @@
   [{:keys [client-id client-secret user-id]}]
   (verify-args {:client-id client-id :client-secret client-secret :user-id user-id} [:client-id :client-secret :user-id])
   (let [credentials (get-gmail-credentials client-id client-secret)
+        _ (when (not (.isTokenValid? credentials))
+            (refresh-gmail-token credentials))
         service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
                                 (JacksonFactory/getDefaultInstance)
                                 credentials)
