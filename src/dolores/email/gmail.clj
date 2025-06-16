@@ -56,7 +56,9 @@
             email {::email/header header ::email/body body ::email/attachments []}]
         (if (s/valid? ::email/email-full email)
           email
-          (throw (ex-info "Invalid email" {:email email}))))
+          (do
+            (s/explain ::email/email-full email)
+            (throw (ex-info "Invalid email" {:email email})))))
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
