@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [dolores.utils :refer [verify-args]]
             [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
   (:import (com.google.api.services.gmail Gmail$Builder)
            (com.google.api.services.gmail.model Message)
@@ -123,6 +124,9 @@
 (s/fdef connect!
   :args (s/keys :req-un [::email/client-id ::email/client-secret ::email/user-id])
   :ret (s/nilable RawGmailService))
+;; Instrument the spec'd functions
+(stest/instrument)
+
 (defn connect!
   "Authenticates with Gmail and creates a RawGmailService."
   [& {:keys [client-id client-secret user-id]}]
