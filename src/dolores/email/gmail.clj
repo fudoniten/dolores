@@ -1,7 +1,7 @@
 (ns dolores.email.gmail
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
-            [dolores.email.protocol :refer [DoloresEmailService ::email-header ::email-full]])
+            [dolores.email.protocol :refer [DoloresEmailService] :as email])
   (:import (com.google.api.services.gmail Gmail)
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
@@ -22,19 +22,19 @@
                      message (.execute (.users.messages.get service user-id message-id))
                      payload (.getPayload message)
                      headers (.getHeaders payload)
-                     header {::to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
-                             ::from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
-                             ::subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                             ::cc []
-                             ::bcc []
-                             ::sent-date (or (.getInternalDate message) (java.util.Date.))
-                             ::received-date (or (.getInternalDate message) (java.util.Date.))
-                             ::spam-score 0.0
-                             ::server-info "Gmail Server"}]
-                 (if (s/valid? ::email-header header)
+                     header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
+                             ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
+                             ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
+                             ::email/cc []
+                             ::email/bcc []
+                             ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
+                             ::email/received-date (or (.getInternalDate message) (java.util.Date.))
+                             ::email/spam-score 0.0
+                             ::email/server-info "Gmail Server"}]
+                 (if (s/valid? ::email/email-header header)
                    header
                    (throw (ex-info "Invalid email header" {:header header})))))
-             messages)))
+             messages))
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
 
@@ -44,17 +44,17 @@
             payload (.getPayload message)
             headers (.getHeaders payload)
             body (or (.getData (.getBody payload)) "")
-            header {::to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
-                    ::from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
-                    ::subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                    ::cc []
-                    ::bcc []
-                    ::sent-date (or (.getInternalDate message) (java.util.Date.))
-                    ::received-date (or (.getInternalDate message) (java.util.Date.))
-                    ::spam-score 0.0
-                    ::server-info "Gmail Server"}
-            email {::header header ::body body ::attachments []}]
-        (if (s/valid? ::email-full email)
+            header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
+                    ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
+                    ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
+                    ::email/cc []
+                    ::email/bcc []
+                    ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
+                    ::email/received-date (or (.getInternalDate message) (java.util.Date.))
+                    ::email/spam-score 0.0
+                    ::email/server-info "Gmail Server"}
+            email {::email/header header ::email/body body ::email/attachments []}]
+        (if (s/valid? ::email/email-full email)
           email
           (throw (ex-info "Invalid email" {:email email}))))
       (catch Exception e
@@ -72,20 +72,20 @@
                      payload (.getPayload message)
                      headers (.getHeaders payload)
                      body (or (.getData (.getBody payload)) "")
-                     header {::to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
-                             ::from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
-                             ::subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
-                             ::cc []
-                             ::bcc []
-                             ::sent-date (or (.getInternalDate message) (java.util.Date.))
-                             ::received-date (or (.getInternalDate message) (java.util.Date.))
-                             ::spam-score 0.0
-                             ::server-info "Gmail Server"}
-                     email {::header header ::body body ::attachments []}]
-                 (if (s/valid? ::email-full email)
+                     header {::email/to (or (some #(when (= "To" (.getName %)) (.getValue %)) headers) "")
+                             ::email/from (or (some #(when (= "From" (.getName %)) (.getValue %)) headers) "")
+                             ::email/subject (or (some #(when (= "Subject" (.getName %)) (.getValue %)) headers) "")
+                             ::email/cc []
+                             ::email/bcc []
+                             ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
+                             ::email/received-date (or (.getInternalDate message) (java.util.Date.))
+                             ::email/spam-score 0.0
+                             ::email/server-info "Gmail Server"}
+                     email {::email/header header ::email/body body ::email/attachments []}]
+                 (if (s/valid? ::email/email-full email)
                    email
                    (throw (ex-info "Invalid email" {:email email})))))
-             messages)))
+             messages))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
