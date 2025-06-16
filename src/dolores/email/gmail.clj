@@ -71,6 +71,7 @@
     (log/info "Labels managed successfully.")
     (catch Exception e
       (log/error e "Failed to manage labels"))))
+
 (defn get-gmail-credentials
   "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
   [client-id client-secret]
