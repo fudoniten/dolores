@@ -2,7 +2,7 @@
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
-  (:import (com.google.api.services.gmail Gmail)
+  (:import (com.google.api.services.gmail Gmail$Builder)
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
            (com.google.api.client.json.jackson2 JacksonFactory)
@@ -63,23 +63,6 @@
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
-(defn connect!
-  "Authenticates with Gmail and creates a RawGmailService."
-  [{:keys [client-id client-secret user-id]}]
-  (let [credentials (get-gmail-credentials client-id client-secret)
-        service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
-                                (JacksonFactory/getDefaultInstance)
-                                credentials)
-        gmail-service (.build service)]
-    (->RawGmailService gmail-service user-id)))
-  "Manages labels for Gmail messages."
-  [^Gmail service user-id message-id labels]
-  (try
-    ;; Implement label management logic here
-    (log/info "Labels managed successfully."))
-  (catch Exception e
-    (log/error e "Failed to manage labels")))
-
 (defn get-gmail-credentials
   "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
   [client-id client-secret]
@@ -96,6 +79,16 @@
       (catch Exception e
         (log/error e "Failed to obtain Gmail credentials")
         nil))))
+
+(defn connect!
+  "Authenticates with Gmail and creates a RawGmailService."
+  [{:keys [client-id client-secret user-id]}]
+  (let [credentials (get-gmail-credentials client-id client-secret)
+        service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
+                                (JacksonFactory/getDefaultInstance)
+                                credentials)
+        gmail-service (.build service)]
+    (->RawGmailService gmail-service user-id)))
 
 (defn refresh-gmail-token
   "Refreshes the Gmail API access token using the provided credential object."
