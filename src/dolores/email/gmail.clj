@@ -28,8 +28,8 @@
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
                 ::email/cc (vec (or (some #(when (= "Cc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
                 ::email/bcc (vec (or (some #(when (= "Bcc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
-                ::email/sent-date (or (some-> message (.getInternalDate) (Instant/ofEpochSecond) (java.util.Date/from)) (java.util.Date.))
-                ::email/received-date (or (some-> message (.getInternalDate) (Instant/ofEpochSecond) (java.util.Date/from)) (java.util.Date.))
+                ::email/sent-date (or (some-> message (.getInternalDate) (java.util.Date.)) (java.util.Date.))
+                ::email/received-date (or (some-> message (.getInternalDate) (java.util.Date.)) (java.util.Date.))
                 ::email/spam-score 0.0
                 ::email/server-info "Gmail Server"}
         email {::email/header header ::email/body body ::email/attachments []}]
