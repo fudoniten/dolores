@@ -1,5 +1,6 @@
 (ns dolores.email.gmail
   (:require [clojure.tools.logging :as log]
+            [clojure.string :as str]
             [dolores.utils :refer [verify-args]]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
@@ -26,9 +27,9 @@
         header {::email/to (or (some #(when (= "To" (:name %)) (:value %)) headers) "")
                 ::email/from (or (some #(when (= "From" (:name %)) (:value %)) headers) "")
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
-                ::email/cc (vec (or (some #(when (= "Cc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
-                ::email/bcc (vec (or (some #(when (= "Bcc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
-                ::email/sent-date (or (some-> message (.getInternalDate) (java.util.Date.)) (java.util.Date.))
+                ::email/cc (vec (or (some #(when (= "Cc" (:name %)) (str/split (:value %) #",\s*")) headers) []))
+                ::email/bcc (vec (or (some #(when (= "Bcc" (:name %)) (str/split (:value %) #",\s*")) headers) []))
+                ::email/sent-date (or (some-> message (.getInternalDate) (Instant/ofEpochSecond)) (java.util.Date.))
                 ::email/received-date (or (some-> message (.getInternalDate) (java.util.Date.)) (java.util.Date.))
                 ::email/spam-score 0.0
                 ::email/server-info "Gmail Server"}
