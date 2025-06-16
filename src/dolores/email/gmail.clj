@@ -7,7 +7,8 @@
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
            (com.google.api.client.json.jackson2 JacksonFactory)
            (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder)
-           (com.google.api.client.auth.oauth2 Credential)))
+           (com.google.api.client.auth.oauth2 Credential)
+           (java.time Instant)))
 
 (defprotocol RawGmailOperations
   "Protocol for raw Gmail operations."
@@ -25,8 +26,8 @@
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
                 ::email/cc (vec (or (some #(when (= "Cc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
                 ::email/bcc (vec (or (some #(when (= "Bcc" (:name %)) (clojure.string/split (:value %) #",\s*")) headers) []))
-                ::email/sent-date (or (.getInternalDate message) (java.util.Date.))
-                ::email/received-date (or (.getInternalDate message) (java.util.Date.))
+                ::email/sent-date (or (some-> message (.getInternalDate) (Instant/ofEpochSecond)) (Instant/now))
+                ::email/received-date (or (some-> message (.getInternalDate) (Instant/ofEpochSecond)) (Instant/now))
                 ::email/spam-score 0.0
                 ::email/server-info "Gmail Server"}
         email {::email/header header ::email/body body ::email/attachments []}]
