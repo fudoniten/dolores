@@ -63,7 +63,15 @@
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
-(defn manage-labels
+(defn connect!
+  "Authenticates with Gmail and creates a RawGmailService."
+  [{:keys [client-id client-secret user-id]}]
+  (let [credentials (get-gmail-credentials client-id client-secret)
+        service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
+                                (JacksonFactory/getDefaultInstance)
+                                credentials)
+        gmail-service (.build service)]
+    (->RawGmailService gmail-service user-id)))
   "Manages labels for Gmail messages."
   [^Gmail service user-id message-id labels]
   (try
