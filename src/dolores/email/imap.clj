@@ -6,7 +6,7 @@
 
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
-  (search-emails [this since])
+  (search-emails [this since & {:keys [headers-only] :or {headers-only false}}])
   (get-email-content [this email-id]))
 
 (defrecord RawImapService [store]
@@ -15,8 +15,11 @@
     (let [inbox (.getFolder store "INBOX")]
       (.open inbox Folder/READ_ONLY)
       (let [since-date (java.util.Date. (.getTime since))
-            search-term (javax.mail.search.ReceivedDateTerm. javax.mail.search.ComparisonTerm/GT since-date)]
-        (.search inbox search-term))))
+            search-term (javax.mail.search.ReceivedDateTerm. javax.mail.search.ComparisonTerm/GT since-date)
+            messages (.search inbox search-term)]
+        (if headers-only
+          (map #(doto % (.setFlags (Flags. Flags$Flag/SEEN) false)) messages)
+          messages))))
 
   (get-email-content [_ email-id]
     (let [inbox (.getFolder store "INBOX")]
@@ -54,7 +57,7 @@
   DoloresEmailService
   (get-headers [_ since]
     (try
-      (let [messages (search-emails raw-service since)]
+      (let [messages (search-emails raw-service since :headers-only true)]
         (map parse-email messages))
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
