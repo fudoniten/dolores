@@ -33,7 +33,9 @@
                              ::email/server-info "Gmail Server"}]
                  (if (s/valid? ::email/email-header header)
                    header
-                   (throw (ex-info "Invalid email header" {:header header})))))
+                   (do
+                     (s/explain ::email/email-header header)
+                     (throw (ex-info "Invalid email header" {:header header}))))))
              messages))
       (catch Exception e
         (log/error e "Failed to fetch email headers"))))
@@ -86,7 +88,9 @@
                      email {::email/header header ::email/body body ::email/attachments []}]
                  (if (s/valid? ::email/email-full email)
                    email
-                   (throw (ex-info "Invalid email" {:email email})))))
+                   (do
+                     (s/explain ::email/email-full email)
+                     (throw (ex-info "Invalid email" {:email email}))))))
              messages))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
