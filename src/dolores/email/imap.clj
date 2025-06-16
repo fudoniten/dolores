@@ -47,7 +47,8 @@
         email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
     (if (s/valid? ::email/email-full email)
       email
-      (throw (ex-info "Invalid email" {:email email})))))
+      (do (s/explain ::email/email-full email)
+          (throw (ex-info "Invalid email" {:email email}))))))
 
 (defrecord ImapService [raw-service]
   DoloresEmailService
