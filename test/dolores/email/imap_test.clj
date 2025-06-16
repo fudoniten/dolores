@@ -4,6 +4,7 @@
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :as email])
   (:import (javax.mail.internet MimeMessage)
+           (javax.mail Session Message$RecipientType)
            (javax.mail Session)
            java.util.Date))
 
@@ -29,21 +30,21 @@
 (deftest test-get-headers
   (testing "Fetching email headers"
     (let [raw-ops (mock-raw-email-operations)
-          imap-service (imap/->IMAPServiceWrapper raw-ops)
+          imap-service (imap/->ImapService raw-ops)
           headers (email/get-headers imap-service (Date.))]
       (is (every? #(s/valid? ::email/email-full %) headers)))))
 
 (deftest test-get-email
   (testing "Fetching full email content"
     (let [raw-ops (mock-raw-email-operations)
-          imap-service (imap/->IMAPServiceWrapper raw-ops)
+          imap-service (imap/->ImapService raw-ops)
           email (email/get-email imap-service "mock-id")]
       (is (s/valid? ::email/email-full email)))))
 
 (deftest test-get-emails
   (testing "Fetching multiple emails"
     (let [raw-ops (mock-raw-email-operations)
-          imap-service (imap/->IMAPServiceWrapper raw-ops)
+          imap-service (imap/->ImapService raw-ops)
           emails (email/get-emails imap-service (Date.))]
       (is (every? #(s/valid? ::email/email-full %) emails)))))
 
