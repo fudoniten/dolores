@@ -1,7 +1,14 @@
 (ns dolores.email.gmail
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
-            [dolores.email.protocol :refer [DoloresEmailService] :as email])
+            [dolores.email.protocol :refer [DoloresEmailService] :as email]))
+
+(defn verify-args
+  "Verifies that all required keys are present in the map."
+  [m required-keys]
+  (doseq [k required-keys]
+    (when (nil? (get m k))
+      (throw (ex-info (str "Missing required argument: " k) {:missing-key k})))))
   (:import (com.google.api.services.gmail Gmail$Builder)
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
@@ -83,6 +90,7 @@
 (defn connect!
   "Authenticates with Gmail and creates a RawGmailService."
   [{:keys [client-id client-secret user-id]}]
+  (verify-args {:client-id client-id :client-secret client-secret :user-id user-id} [:client-id :client-secret :user-id])
   (let [credentials (get-gmail-credentials client-id client-secret)
         service (Gmail$Builder. (GoogleNetHttpTransport/newTrustedTransport)
                                 (JacksonFactory/getDefaultInstance)

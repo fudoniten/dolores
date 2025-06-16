@@ -1,7 +1,14 @@
 (ns dolores.email.imap
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
-            [dolores.email.protocol :refer [DoloresEmailService] :as email])
+            [dolores.email.protocol :refer [DoloresEmailService] :as email]))
+
+(defn verify-args
+  "Verifies that all required keys are present in the map."
+  [m required-keys]
+  (doseq [k required-keys]
+    (when (nil? (get m k))
+      (throw (ex-info (str "Missing required argument: " k) {:missing-key k})))))
   (:import (javax.mail Session Folder Message$RecipientType)))
 
 (defprotocol RawEmailOperations
@@ -67,4 +74,5 @@
 
 (defn connect!
   [{:keys [::host ::user ::password]}]
+  (verify-args {:host host :user user :password password} [:host :user :password])
   (->ImapService (->RawImapService (-create-connection! host user password))))
