@@ -33,7 +33,7 @@
     (if (s/valid? ::email/email-full email)
       email
       (do
-        (s/explain ::email/email-full email)
+        (s/explain-data ::email/email-full email)
         (throw (ex-info "Invalid email" {:email email}))))))
 
 (defrecord RawGmailService [service user-id]

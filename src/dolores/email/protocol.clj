@@ -12,7 +12,7 @@
 (s/def ::cc (s/coll-of string? :kind vector?))
 (s/def ::bcc (s/coll-of string? :kind vector?))
 (s/def ::attachments (s/coll-of string? :kind vector?))
-(s/def ::header (s/keys :req [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
+(s/def ::header (s/keys :req-un [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
 (s/def ::email-header (s/keys :req [::header]))
 (s/def ::email-full (s/keys :req [::header ::body ::attachments]))
 
