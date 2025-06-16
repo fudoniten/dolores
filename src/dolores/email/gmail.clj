@@ -71,3 +71,29 @@
     (log/info "Labels managed successfully.")
     (catch Exception e
       (log/error e "Failed to manage labels"))))
+(defn get-gmail-credentials
+  "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
+  [client-id client-secret]
+  ;; Function to get Gmail credentials using OAuth 2.0 without redirect URI
+  (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
+        json-factory (JacksonFactory/getDefaultInstance)
+        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
+                 (.setAccessType "offline")
+                 (.build))]
+    (try
+      (let [credential (.authorize flow "user")]
+        (log/info "Gmail credentials obtained successfully.")
+        credential)
+      (catch Exception e
+        (log/error e "Failed to obtain Gmail credentials")
+        nil))))
+
+(defn refresh-gmail-token
+  "Refreshes the Gmail API access token using the provided credential object."
+  [credential]
+  ;; Function to refresh Gmail API access token
+  (try
+    (.refreshToken credential)
+    (log/info "Gmail access token refreshed successfully.")
+    (catch Exception e
+      (log/error e "Failed to refresh Gmail access token"))))
