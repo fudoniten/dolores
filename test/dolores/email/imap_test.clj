@@ -16,7 +16,8 @@
     (.setFrom from)
     (.setSubject subject)
     (.setSentDate (java.util.Date.))
-    (.setReceivedDate (java.util.Date.))
+    ;; Simulate received date using a custom header or use sent date as a proxy
+    (.addHeader "X-Received-Date" (str (java.util.Date.)))
     (.setContent body "text/plain")))
 
 (defn mock-raw-email-operations
