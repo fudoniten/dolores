@@ -16,6 +16,7 @@
 (defrecord RawImapService [store]
   RawEmailOperations
   (search-emails [_ since]
+    (assert (inst? since))
     (let [inbox (.getFolder store "INBOX")]
       (.open inbox Folder/READ_ONLY)
       (let [since-date (Date/from since)
