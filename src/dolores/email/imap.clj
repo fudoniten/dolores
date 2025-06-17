@@ -73,7 +73,7 @@
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
-  (get-emails [_ ^java.time.Instant since]
+  (get-emails [_ since]
     (try
       (map parse-email (search-emails raw-service since))
       (catch Exception e
