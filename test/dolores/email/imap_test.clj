@@ -12,7 +12,7 @@
 
 (defn mock-mime-message
   "Creates a mock MimeMessage for testing."
-  [session & {:keys [to from subject body cc bcc] :or {body "" cc [] bcc []}}]
+  [session & {:keys [to from subject body cc bcc mime-type] :or {body "" cc [] bcc [] mime-type "text/plain"}}]
   (doto (MimeMessage. session)
     (.setRecipients Message$RecipientType/TO to)
     (.setRecipients Message$RecipientType/CC (str/join " " cc))
@@ -21,7 +21,8 @@
     (.setSubject subject)
     (.setSentDate (Date.))
     ;; Simulate received date using a custom header or use sent date as a proxy
-    (.addHeader "X-Received-Date" (str (Instant/now)))))
+    (.addHeader "X-Received-Date" (str (Instant/now)))
+    (.setContent body mime-type)))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
