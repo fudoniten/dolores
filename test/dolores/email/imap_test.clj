@@ -59,7 +59,21 @@
                                      :body "This is the body of the email.")]
       (is (= "This is the body of the email." (imap/message-get-body message))))))
 
-(deftest test-message-get-body-text-html
+(deftest test-message-get-body-multipart
+  (testing "Extracting body from multipart message"
+    (let [session (Session/getDefaultInstance (System/getProperties))
+          message (doto (MimeMessage. session)
+                    (.setRecipients Message$RecipientType/TO "to@example.com")
+                    (.setFrom "from@example.com")
+                    (.setSubject "Test Subject")
+                    (.setSentDate (Date.))
+                    (.addHeader "X-Received-Date" (str (Instant/now)))
+                    (.setContent (doto (javax.mail.internet.MimeMultipart.)
+                                   (.addBodyPart (doto (javax.mail.internet.MimeBodyPart.)
+                                                   (.setText "This is the plain text part of the email.")))
+                                   (.addBodyPart (doto (javax.mail.internet.MimeBodyPart.)
+                                                   (.setContent "<html><body>This is the <b>HTML</b> part of the email.</body></html>" "text/html"))))))]
+      (is (= "This is the plain text part of the email." (str/trim (imap/message-get-body message)))))))
   (testing "Extracting body from HTML message"
     (let [session (Session/getDefaultInstance (System/getProperties))
           message (-> (mock-mime-message session
