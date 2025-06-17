@@ -3,7 +3,7 @@
             [dolores.utils :refer [verify-args]]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
-  (:import (javax.mail Session Folder Message$RecipientType)
+  (:import (javax.mail Session Folder Message$RecipientType Message)
            (javax.mail.search ReceivedDateTerm ComparisonTerm)
            java.util.Date
            java.time.Instant))
@@ -37,8 +37,9 @@
       store)))
 
 (s/fdef parse-email
-  :args (s/cat :msg (s/instance? javax.mail.Message))
+  :args (s/cat :msg (partial instance? Message))
   :ret (s/nilable ::email/email-full))
+(defn parse-email
   "Converts a javax.mail.Message to the internal email format."
   [msg]
   (let [header {::email/to (str (or (first (.getRecipients msg Message$RecipientType/TO)) ""))
@@ -46,8 +47,14 @@
                 ::email/subject (or (.getSubject msg) "")
                 ::email/cc (vec (or (map str (.getRecipients msg Message$RecipientType/CC)) []))
                 ::email/bcc (vec (or (map str (.getRecipients msg Message$RecipientType/BCC)) []))
-                ::email/sent-date (or (.getSentDate msg) (java.util.Date.))
-                ::email/received-date (or (.getReceivedDate msg) (java.util.Date.))
+                ::email/sent-date (or (some-> msg
+                                              (.getSentDate)
+                                              (.toInstant))
+                                      (Instant/now))
+                ::email/received-date (or (some-> msg
+                                                  (.getReceivedDate)
+                                                  (.toInstant))
+                                          (Instant/now))
                 ::email/spam-score 0.0 ;; Default spam score
                 ::email/server-info "IMAP Server"}
         body (.getContent msg)
@@ -73,8 +80,9 @@
         (log/error e "Failed to fetch emails")))))
 
 (s/fdef connect!
-  :args (s/keys :req-un [::email/host ::email/user ::email/password])
-  :ret (s/nilable ImapService))
-  [{:keys [::host ::user ::password]}]
+  :args (s/keys* :req-un [::email/host ::email/user ::email/password])
+  :ret ImapService)
+(defn connect!
+  [& {:keys [::host ::user ::password]}]
   (verify-args {:host host :user user :password password} [:host :user :password])
   (->ImapService (->RawImapService (-create-connection! host user password))))

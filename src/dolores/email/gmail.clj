@@ -9,9 +9,15 @@
            (com.google.api.services.gmail.model Message)
            (com.google.api.client.googleapis.javanet GoogleNetHttpTransport)
            (com.google.api.client.json.jackson2 JacksonFactory)
-           (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder)
-           (java.time Instant)))
-
+           (com.google.api.client.googleapis.auth.oauth2 GoogleAuthorizationCodeFlow$Builder
+                                                         GoogleClientSecrets
+                                                         GoogleClientSecrets$Details)
+           (com.google.api.client.util.store FileDataStoreFactory)
+           (com.google.api.client.extensions.java6.auth.oauth2 AuthorizationCodeInstalledApp)
+           (com.google.api.client.extensions.jetty.auth.oauth2 LocalServerReceiver$Builder)
+           (java.io File)
+           (java.time Instant)
+           (java.util Collections)))
 
 (defprotocol RawGmailOperations
   "Protocol for raw Gmail operations."
@@ -38,28 +44,41 @@
     (assert (not (nil? email)) (throw (ex-info "EMAIL IS NIL!" {})))
     (if (s/valid? ::email/email-full email)
       email
-      (do (s/explain-data ::email/email-full email)
+      (do (s/explain ::email/email-full email)
           (throw (ex-info "Invalid email" {:email email}))))))
+
+(defn authorization-url [flow redirect-uri]
+  (.. flow newAuthorizationUrl (setRedirectUri redirect-uri) build toString))
 
 (s/fdef get-gmail-credentials
   :args (s/cat :client-id ::email/client-id :client-secret ::email/client-secret)
-  :ret (s/nilable ::email/credential))
+  :ret  ::email/credential)
 (defn get-gmail-credentials
   "Obtains Gmail credentials using OAuth 2.0 with the provided client ID and client secret."
   [client-id client-secret]
   ;; Function to get Gmail credentials using OAuth 2.0 without redirect URI
   (let [http-transport (GoogleNetHttpTransport/newTrustedTransport)
         json-factory (JacksonFactory/getDefaultInstance)
-        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory client-id client-secret ["https://www.googleapis.com/auth/gmail.readonly"])
+        client-deets (doto (GoogleClientSecrets$Details.)
+                       (.setClientId client-id)
+                       (.setClientSecret client-secret)
+                       ;;(.setAuthUri "https://accounts.google.com/o/oauth2/auth")
+                       ;;(.setTokenUri "https://oauth2.googleapis.com/token")
+                       )
+        secrets (doto (GoogleClientSecrets.)
+                  (.setInstalled client-deets))
+        flow (-> (GoogleAuthorizationCodeFlow$Builder. http-transport json-factory secrets
+                                                       (Collections/singleton "https://www.googleapis.com/auth/gmail.readonly")
+                 (.setDataStoreFactory (FileDataStoreFactory. (File. "tokens")))
                  (.setAccessType "offline")
-                 (.build))]
+                 (.build)))]
     (try
-      (let [credential (.authorize flow "user")]
+      (println (format "visit the following url to authenticate with google: %s" auth-url))
+      (let [credential (.authorize app "user")]
         (log/info "Gmail credentials obtained successfully.")
         credential)
       (catch Exception e
-        (log/error e "Failed to obtain Gmail credentials")
-        nil))))
+        (throw (ex-info "failed to obtain gmail credentials" {:error e}))))))
 
 (defn token-age
   "Calculates the age of the token in milliseconds."
@@ -69,7 +88,7 @@
 
 (s/fdef refresh-gmail-token
   :args (s/cat :credential ::email/credential)
-  :ret (s/nilable ::email/credential))
+  :ret ::email/credential)
 (defn refresh-gmail-token
   "Refreshes the Gmail API access token using the provided credential object."
   [credential]
@@ -79,11 +98,11 @@
     (log/info "Gmail access token refreshed successfully.")
     credential
     (catch Exception e
-      (log/error e "Failed to refresh Gmail access token"))))
+      (throw (ex-info "failed to refresh gmail access token" {:error e})))))
 
 (s/fdef refresh-token-if-needed
   :args (s/cat :credential ::email/credential :max-age ::email/max-age)
-  :ret (s/nilable ::email/credential))
+  :ret ::email/credential)
 (defn refresh-token-if-needed
   "Refreshes the token if it is older than the specified max-age."
   [credential max-age]
@@ -122,10 +141,8 @@
         (log/error e "Failed to fetch emails")))))
 
 (s/fdef connect!
-  :args (s/keys :req-un [::email/client-id ::email/client-secret ::email/user-id])
-  :ret (s/nilable RawGmailService))
-;; Instrument the spec'd functions
-(stest/instrument)
+  :args (s/keys* :req-un [::email/client-id ::email/client-secret ::email/user-id])
+  :ret RawGmailService)
 
 (defn connect!
   "Authenticates with Gmail and creates a RawGmailService."
@@ -140,3 +157,6 @@
                                   credentials)
           gmail-service (.build service)]
       (->RawGmailService gmail-service user-id))))
+
+;; Instrument the spec'd functions
+(stest/instrument)
