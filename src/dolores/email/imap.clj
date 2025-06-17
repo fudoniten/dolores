@@ -71,7 +71,7 @@
   (let [content (.getContent msg)
         tika (get-tika)]
     (cond
-      (string? content) 
+      (string? content)
       (if (.isMimeType msg "text/html")
         (.parseToString tika (-> content (.getBytes "UTF-8") (ByteArrayInputStream.)))
         content)
