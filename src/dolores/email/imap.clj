@@ -68,9 +68,13 @@
    (println "***")))
 
 (defn message-get-body [^Message msg]
-  (let [content (.getContent msg)]
+  (let [content (.getContent msg)
+        tika (get-tika)]
     (cond
-      (string? content) content
+      (string? content) 
+      (if (.isMimeType msg "text/html")
+        (.parseToString tika (-> content (.getBytes "UTF-8") (ByteArrayInputStream.)))
+        content)
 
       (instance? Multipart content)
       (let [^Multipart multipart content
