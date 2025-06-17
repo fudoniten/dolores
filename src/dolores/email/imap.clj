@@ -72,7 +72,7 @@
         tika (get-tika)]
     (cond
       (string? content) 
-      (if (.isMimeType msg "text/html")
+      (if (and (string? content) (.isMimeType msg "text/html"))
         (.parseToString tika (-> content (.getBytes "UTF-8") (ByteArrayInputStream.)))
         content)
 
