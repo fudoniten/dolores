@@ -69,36 +69,36 @@
 
 (defn message-get-body [^Message msg]
   (let [content (.getContent msg)]
-    (cond (string? content) (trace content "string")
+    (cond
+      (string? content) content
 
-          (instance? Multipart content)
-          (let [^Multipart multipart content
-                parts (for [i (range (.getCount multipart))]
-                        (.getBodyPart multipart i))
-                tika (get-tika)]
-            (str/join "\n"
-                      (map (fn [part]
-                             (cond (.isMimeType part "text/plain")
-                                   (trace (.getContent part) "text/plain")
+      (instance? Multipart content)
+      (let [^Multipart multipart content
+            parts (for [i (range (.getCount multipart))]
+                    (.getBodyPart multipart i))
+            tika (get-tika)]
+        (str/join "\n"
+                  (map (fn [part]
+                         (cond
+                           (.isMimeType part "text/plain")
+                           (.getContent part)
 
-                                   (.isMimeType part "text/html")
-                                   (trace
-                                    (.parseToString tika
-                                                    (-> part
-                                                        (.getContent)
-                                                        (.getBytes "UTF-8")
-                                                        (ByteArrayInputStream.)))
-                                    "text/html")
+                           (.isMimeType part "text/html")
+                           (.parseToString tika
+                                           (-> part
+                                               (.getContent)
+                                               (.getBytes "UTF-8")
+                                               (ByteArrayInputStream.)))
 
-                                   :else (do (log/info (format "skipping mime type: %s"
-                                                               (.getContentType part)))
-                                             "")))
-                           parts)))
+                           :else (do (log/info (format "skipping mime type: %s"
+                                                       (.getContentType part)))
+                                     "")))
+                       parts)))
 
-          (instance? InputStream content)
-          (trace (slurp content) "something?")
+      (instance? InputStream content)
+      (slurp content)
 
-          :else (str content))))
+      :else (str content))))
 
 (defn body->string [msg-body]
   (if (instance? javax.mail.internet.MimeMultipart msg-body)
@@ -122,8 +122,8 @@
   (let [header {::email/to (str (or (first (.getRecipients msg Message$RecipientType/TO)) ""))
                 ::email/from (str (or (first (.getFrom msg)) ""))
                 ::email/subject (or (.getSubject msg) "")
-                ::email/cc (vec (or (map str (.getRecipients msg Message$RecipientType/CC)) []))
-                ::email/bcc (vec (or (map str (.getRecipients msg Message$RecipientType/BCC)) []))
+                ::email/cc (vec (or (map #(str (.toString %)) (.getRecipients msg Message$RecipientType/CC)) []))
+                ::email/bcc (vec (or (map #(str (.toString %)) (.getRecipients msg Message$RecipientType/BCC)) []))
                 ::email/sent-date (or (some-> msg
                                               (.getSentDate)
                                               (.toInstant))
