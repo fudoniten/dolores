@@ -134,7 +134,7 @@
                                           (Instant/now))
                 ::email/spam-score 0.0 ;; Default spam score
                 ::email/server-info "IMAP Server"}
-        body (message-get-body (.getContent msg))
+        body (message-get-body msg)
         email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
     (if (s/valid? ::email/email-full email)
       email
