@@ -58,7 +58,19 @@
                                           (Instant/now))
                 ::email/spam-score 0.0 ;; Default spam score
                 ::email/server-info "IMAP Server"}
-        body (.getContent msg)
+        body (let [content (.getContent msg)]
+               (if (instance? javax.mail.internet.MimeMultipart content)
+                 (let [multipart (javax.mail.internet.MimeMultipart. content)]
+                   (loop [i 0
+                          text ""]
+                     (if (< i (.getCount multipart))
+                       (let [part (.getBodyPart multipart i)]
+                         (if (or (= (.getContentType part) "text/plain")
+                                 (= (.getContentType part) "text/html"))
+                           (recur (inc i) (str text (.getContent part)))
+                           (recur (inc i) text)))
+                       text)))
+                 (str content)))
         email {::email/header header ::email/body body ::email/attachments []}] ;; Add logic for attachments if needed
     (if (s/valid? ::email/email-full email)
       email
