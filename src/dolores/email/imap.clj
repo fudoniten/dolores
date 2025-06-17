@@ -10,7 +10,7 @@
 
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
-  (search-emails [this since])
+  (search-emails [this ^java.time.Instant since])
   (get-email-content [this email-id]))
 
 (defrecord RawImapService [store]
@@ -18,7 +18,7 @@
   (search-emails [_ since]
     (let [inbox (.getFolder store "INBOX")]
       (.open inbox Folder/READ_ONLY)
-      (let [since-date (Date. (.getTime since))
+      (let [since-date (Date/from since)
             search-term (ReceivedDateTerm. ComparisonTerm/GT since-date)]
         (.search inbox search-term))))
 
@@ -73,7 +73,7 @@
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
-  (get-emails [_ since]
+  (get-emails [_ ^java.time.Instant since]
     (try
       (map parse-email (search-emails raw-service since))
       (catch Exception e

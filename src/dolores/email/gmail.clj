@@ -133,9 +133,9 @@
       (catch Exception e
         (log/error e "Failed to fetch email"))))
 
-  (get-emails [_ since]
+  (get-emails [_ ^java.time.Instant since]
     (try
-      (let [query (str "after:" (.getTime since))]
+      (let [query (str "after:" (.toEpochMilli since))]
         (map parse-gmail-email (fetch-emails raw-service query)))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
