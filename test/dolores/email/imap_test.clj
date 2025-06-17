@@ -49,7 +49,7 @@
           cleaned-text (imap/clean-email-text raw-text)]
       (is (= expected cleaned-text)))))
 
-(deftest test-message-get-body
+(deftest test-message-get-body-text-plain
   (testing "Extracting body from message"
     (let [session (Session/getDefaultInstance (System/getProperties))
           message (mock-mime-message session
@@ -58,6 +58,16 @@
                                      :subject "Test Subject"
                                      :body "This is the body of the email.")]
       (is (= "This is the body of the email." (imap/message-get-body message))))))
+
+(deftest test-message-get-body-text-html
+  (testing "Extracting body from HTML message"
+    (let [session (Session/getDefaultInstance (System/getProperties))
+          message (mock-mime-message session
+                                     :to "to@example.com"
+                                     :from "from@example.com"
+                                     :subject "Test Subject"
+                                     :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>")]
+      (is (= "This is the HTML body of the email." (str/trim (imap/message-get-body message)))))))
 
 (deftest test-email-cc-and-bcc
   (testing "Fetching email with CC and BCC"
