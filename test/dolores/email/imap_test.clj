@@ -21,8 +21,7 @@
     (.setSubject subject)
     (.setSentDate (Date.))
     ;; Simulate received date using a custom header or use sent date as a proxy
-    (.addHeader "X-Received-Date" (str (Instant/now)))
-    (.setContent body "text/html")))
+    (.addHeader "X-Received-Date" (str (Instant/now)))))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
@@ -62,11 +61,11 @@
 (deftest test-message-get-body-text-html
   (testing "Extracting body from HTML message"
     (let [session (Session/getDefaultInstance (System/getProperties))
-          message (mock-mime-message session
+          message (-> (mock-mime-message session
                                      :to "to@example.com"
                                      :from "from@example.com"
                                      :subject "Test Subject"
-                                     :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>")]
+                                     :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>"))]
       (is (= "This is the HTML body of the email." (str/trim (imap/message-get-body message)))))))
 
 (deftest test-email-cc-and-bcc
