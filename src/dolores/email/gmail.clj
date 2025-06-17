@@ -24,25 +24,26 @@
   (fetch-email [this email-id])
   (fetch-emails [this query]))
 
-(defn parse-gmail-email
+(defn body->string
+  "Converts the body of a Gmail message to a plain text string."
+  [body-part]
+  (if (instance? javax.mail.internet.MimeMultipart body-part)
+    (let [multipart (javax.mail.internet.MimeMultipart. body-part)]
+      (loop [i 0
+             text ""]
+        (if (< i (.getCount multipart))
+          (let [part (.getBodyPart multipart i)]
+            (if (= (.getContentType part) "text/plain")
+              (recur (inc i) (str text (.getContent part)))
+              (recur (inc i) text)))
+          text)))
+    (.getData body-part)))
   "Converts a Gmail Message to the internal email format."
   [^Message message]
   (s/assert ::email/gmail-message message)
   (let [payload (.getPayload message)
         headers (.getHeaders payload)
-        body (or (let [body-part (.getBody payload)]
-                   (if (instance? javax.mail.internet.MimeMultipart body-part)
-                     (let [multipart (javax.mail.internet.MimeMultipart. body-part)]
-                       (loop [i 0
-                              text ""]
-                         (if (< i (.getCount multipart))
-                           (let [part (.getBodyPart multipart i)]
-                             (if (= (.getContentType part) "text/plain")
-                               (recur (inc i) (str text (.getContent part)))
-                               (recur (inc i) text)))
-                           text)))
-                     (.getData body-part)))
-                 "")
+        body (or (body->string (.getBody payload)) "")
         header {::email/to (or (some #(when (= "To" (:name %)) (:value %)) headers) "")
                 ::email/from (or (some #(when (= "From" (:name %)) (:value %)) headers) "")
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
