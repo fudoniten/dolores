@@ -30,7 +30,19 @@
   (s/assert ::email/gmail-message message)
   (let [payload (.getPayload message)
         headers (.getHeaders payload)
-        body (or (.getData (.getBody payload)) "")
+        body (or (let [body-part (.getBody payload)]
+                   (if (instance? javax.mail.internet.MimeMultipart body-part)
+                     (let [multipart (javax.mail.internet.MimeMultipart. body-part)]
+                       (loop [i 0
+                              text ""]
+                         (if (< i (.getCount multipart))
+                           (let [part (.getBodyPart multipart i)]
+                             (if (= (.getContentType part) "text/plain")
+                               (recur (inc i) (str text (.getContent part)))
+                               (recur (inc i) text)))
+                           text)))
+                     (.getData body-part)))
+                 "")
         header {::email/to (or (some #(when (= "To" (:name %)) (:value %)) headers) "")
                 ::email/from (or (some #(when (= "From" (:name %)) (:value %)) headers) "")
                 ::email/subject (or (some #(when (= "Subject" (:name %)) (:value %)) headers) "")
