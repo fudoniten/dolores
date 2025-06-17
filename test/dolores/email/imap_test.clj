@@ -22,7 +22,7 @@
     (.setSentDate (Date.))
     ;; Simulate received date using a custom header or use sent date as a proxy
     (.addHeader "X-Received-Date" (str (Instant/now)))
-    (.setContent body "text/plain")))
+    (.setContent body "text/html")))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
