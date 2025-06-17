@@ -58,6 +58,8 @@
                                      :subject "Test Subject"
                                      :body "This is the body of the email.")]
       (is (= "This is the body of the email." (imap/message-get-body message))))))
+
+(deftest test-email-cc-and-bcc
   (testing "Fetching email with CC and BCC"
     (let [raw-ops (mock-raw-email-operations)
           imap-service (imap/->ImapService raw-ops)
