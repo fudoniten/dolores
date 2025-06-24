@@ -1,10 +1,10 @@
 (ns dolores.email.gmail-test
   (:require [clojure.test :refer [deftest is testing run-tests]]
+            [clojure.string :as str]
             [dolores.email.gmail :as gmail]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :as email])
-  (:import (com.google.api.services.gmail.model Message)
-           (com.google.api.client.util DateTime)))
+  (:import (com.google.api.services.gmail.model Message)))
 
 (defn mock-gmail-message
   "Creates a mock Gmail Message for testing."
@@ -16,11 +16,11 @@
                    (.setHeaders [{:name "To" :value to}
                                  {:name "From" :value from}
                                  {:name "Subject" :value subject}
-                                 {:name "Cc" :value (clojure.string/join ", " cc)}
-                                 {:name "Bcc" :value (clojure.string/join ", " bcc)}])
+                                 {:name "Cc" :value (str/join ", " cc)}
+                                 {:name "Bcc" :value (str/join ", " bcc)}])
                    (.setBody (doto (com.google.api.services.gmail.model.MessagePartBody.)
                                (.setData body)))))
-    (.setInternalDate message (DateTime. (System/currentTimeMillis)))
+    (.setInternalDate message (System/currentTimeMillis))
     message))
 
 (defn mock-raw-gmail-operations

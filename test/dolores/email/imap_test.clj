@@ -4,7 +4,7 @@
             [dolores.email.imap :as imap]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :as email])
-  (:import (javax.mail.internet MimeMessage)
+  (:import (javax.mail.internet MimeMessage MimeBodyPart MimeMultipart)
            (javax.mail Session Message$RecipientType)
            (javax.mail Session)
            java.time.Instant
@@ -22,7 +22,27 @@
     (.setSubject subject)
     (.setSentDate (Date.))
     (.addHeader "X-Received-Date" (str (Instant/now)))
-    (.setContent body mime-type)))
+    (.setContent body mime-type)
+    (.saveChanges)))
+
+(defn mock-mime-multipart-message
+  "Creates a mock MimeMessage for testing."
+  [session & {:keys [to from subject body cc bcc mime-type]
+              :or {body "" cc [] bcc [] mime-type "text/plain"}}]
+  (let [part (doto (MimeBodyPart.)
+               (.setContent body (str mime-type "; charset=UTF-8")))
+        multipart (doto (MimeMultipart.)
+                    (.addBodyPart part))]
+    (doto (MimeMessage. session)
+      (.setRecipients Message$RecipientType/TO to)
+      (.setRecipients Message$RecipientType/CC (str/join " " cc))
+      (.setRecipients Message$RecipientType/BCC (str/join " " bcc))
+      (.setFrom from)
+      (.setSubject subject)
+      (.setSentDate (Date.))
+      (.addHeader "X-Received-Date" (str (Instant/now)))
+      (.setContent multipart)
+      (.saveChanges))))
 
 (defn mock-raw-email-operations
   "Creates a mock implementation of RawEmailOperations for testing."
@@ -72,17 +92,30 @@
                                    (.addBodyPart (doto (javax.mail.internet.MimeBodyPart.)
                                                    (.setText "This is the plain text part of the email.")))
                                    (.addBodyPart (doto (javax.mail.internet.MimeBodyPart.)
-                                                   (.setContent "<html><body>This is the <b>HTML</b> part of the email.</body></html>" "text/html"))))))]
-      (is (= "This is the plain text part of the email." (str/trim (imap/message-get-body message)))))))
+                                                   (.setContent "<html><body>This is the <b>HTML</b> part of the email.</body></html>" "text/html; charset=UTF-8")))))
+                    (.saveChanges))]
+      (is (= "This is the plain text part of the email.\nThis is the HTML part of the email."
+             (str/trim (imap/message-get-body message)))))))
+
+(deftest test-message-get-body-html
+  (testing "Extracting body from HTML multipart message"
+    (let [session (Session/getDefaultInstance (System/getProperties))
+          message (-> (mock-mime-multipart-message session
+                                                   :to "to@example.com"
+                                                   :from "from@example.com"
+                                                   :subject "Test Subject"
+                                                   :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>"
+                                                   :mime-type "text/html"))]
+      (is (= "This is the HTML body of the email." (str/trim (imap/message-get-body message)))))
   (testing "Extracting body from HTML message"
     (let [session (Session/getDefaultInstance (System/getProperties))
           message (-> (mock-mime-message session
-                                     :to "to@example.com"
-                                     :from "from@example.com"
-                                     :subject "Test Subject"
-                                     :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>"
-                                     :mime-type "text/html"))]
-      (is (= "This is the HTML body of the email." (str/trim (imap/message-get-body message)))))))
+                                         :to "to@example.com"
+                                         :from "from@example.com"
+                                         :subject "Test Subject"
+                                         :body "<html><body>This is the <b>HTML</b> body of the email.</body></html>"
+                                         :mime-type "text/html"))]
+      (is (= "This is the HTML body of the email." (str/trim (imap/message-get-body message))))))))
 
 (deftest test-email-cc-and-bcc
   (testing "Fetching email with CC and BCC"

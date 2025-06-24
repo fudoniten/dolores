@@ -38,6 +38,8 @@
               (recur (inc i) text)))
           text)))
     (.getData body-part)))
+
+(defn parse-gmail-email
   "Converts a Gmail Message to the internal email format."
   [^Message message]
   (s/assert ::email/gmail-message message)

@@ -1,0 +1,7 @@
+.aider*
+.env
+.clj-kondo/
+.cpcache/
+.lsp/
+.nrepl-port
+tokens/

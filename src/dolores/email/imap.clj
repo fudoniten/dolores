@@ -6,11 +6,11 @@
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
   (:import (javax.mail Session Folder Message$RecipientType Message Multipart)
            (javax.mail.search ReceivedDateTerm ComparisonTerm)
-           (java.io InputStream ByteArrayInputStream)
-           (org.apache.tika Tika)
+           (java.io InputStream)
            (com.edlio.emailreplyparser EmailReplyParser)
            java.util.Date
-           java.time.Instant))
+           java.time.Instant
+           org.jsoup.Jsoup))
 
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
@@ -41,13 +41,9 @@
       (.connect store host user password)
       store)))
 
-(let [tika (atom nil)]
-  (defn get-tika []
-    (if @tika @tika (swap! tika (fn [_] (Tika.))))))
-
-;; (let [reply-parser (atom nil)]
-;;   (defn get-reply-parser []
-;;     (if @reply-parser @reply-parser (swap! reply-parser (fn [_] (EmailReplyParser.))))))
+(defn -strip-html-tags
+  [^String html]
+  (.text (Jsoup/parse html)))
 
 (defn clean-email-text
   [raw-text]
@@ -60,27 +56,18 @@
         (str/replace #"\n{3,}" "\n\n")
         (str/trim))))
 
-(defn trace
-  ([o] (trace o ""))
-  ([o msg]
-   (println (format "*** GOT: %s" msg))
-   (clojure.pprint/pprint o)
-   (println "***")))
-
 (defn message-get-body [^Message msg]
-  (let [content (.getContent msg)
-        tika (get-tika)]
+  (let [content (.getContent msg)]
     (cond
       (string? content)
       (if (.isMimeType msg "text/html")
-        (.parseToString tika (-> content (.getBytes "UTF-8") (ByteArrayInputStream.)))
+        (-strip-html-tags content)
         content)
 
       (instance? Multipart content)
       (let [^Multipart multipart content
             parts (for [i (range (.getCount multipart))]
-                    (.getBodyPart multipart i))
-            tika (get-tika)]
+                    (.getBodyPart multipart i))]
         (str/join "\n"
                   (map (fn [part]
                          (cond
@@ -88,11 +75,9 @@
                            (.getContent part)
 
                            (.isMimeType part "text/html")
-                           (.parseToString tika
-                                           (-> part
-                                               (.getContent)
-                                               (.getBytes "UTF-8")
-                                               (ByteArrayInputStream.)))
+                           (-> part
+                               (.getContent)
+                               (-strip-html-tags))
 
                            :else (do (log/info (format "skipping mime type: %s"
                                                        (.getContentType part)))

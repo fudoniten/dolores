@@ -49,6 +49,11 @@
       (when (and (.isFile file) (< (.lastModified file) cutoff-time))
         (.delete file)))))
 
+(defn merge-data
+  "Merge multiple data structures into one."
+  [& data]
+  (apply merge-with into data))
+
 (defn load-data-for-date-range
   "Load and merge data from EDN files within a specified date range."
   [base-dir start-date end-date]
@@ -62,8 +67,3 @@
                               (not (.isAfter file-date end))))))
          (map read-edn-file)
          (apply merge-data))))
-
-(defn merge-data
-  "Merge multiple data structures into one."
-  [& data]
-  (apply merge-with into data))
