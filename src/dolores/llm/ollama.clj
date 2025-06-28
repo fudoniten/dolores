@@ -14,15 +14,21 @@
 
 (defrecord OllamaTask [http-client base-uri model system-prompt]
   llm/LLMClient
-  (generate-text [_ content]
+  (generate-text [_ content errors]
     (try
       (let [response
             (post! http-client
                    (str (add-path base-uri "chat"))
                    {:body (json/generate-string
                            {:model model
-                            :messages [{:role "system" :content system-prompt}
-                                       {:role "user" :content content}]
+                            :messages [{:role "system"
+                                        :content (str/join "\n"
+                                                           ["Process the user content according to the following prompt:"
+                                                            ""
+                                                            system-prompt
+                                                            ""
+                                                            "Fix any errors from previous attempts, specified by \"generation-errors\"."])}
+                                       {:role "user" :content content :generation-errors errors}]
                             :stream false})
                     :headers {"Content-Type" "application/json"}
                     :as :json})]
@@ -66,22 +72,21 @@
   llm/LLMDoloresClient
 
   (prioritize-email [_ email]
-    (llm/generate-text prioritizer email))
+    (llm/generate-text prioritizer {:email email}))
 
   (summarize-email [_ email]
-    (llm/generate-text summarizer email))
+    (llm/generate-text summarizer {:email email}))
 
   (summarize-emails [_ emails]
-    (llm/generate-text bulk-summarizer emails))
+    (llm/generate-text bulk-summarizer {:email emails}))
 
   (highlight-emails [_ emails]
-    (llm/generate-text highlighter emails)))
+    (llm/generate-text highlighter {:email emails})))
 
 
 (defn create-client
   "Create an OllamaDoloresClient connecting to the Ollama LLM backend.
-   host: server host, port: server port.
-   Supports keyword prompts ::prioritize-prompt, ::summarize-prompt, ::bulk-summarize-prompt, ::highlight-prompt."
+   Requires keyword prompts ::prioritize-prompt, ::summarize-prompt, ::bulk-summarize-prompt, ::highlight-prompt."
   [host port
    & {:keys [::prioritize-prompt ::summarize-prompt ::bulk-summarize-prompt ::highlight-prompt]}]
   (let [client (-create-ollama-client host port)]
