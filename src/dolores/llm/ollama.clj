@@ -83,6 +83,23 @@
   (highlight-emails [_ emails]
     (llm/generate-text highlighter {:email emails})))
 
+(defn generate-text-with-retries
+  "Generate text with retries, attempting to parse and validate the result.
+   Throws an exception if it fails within the specified max attempts."
+  [llm-client content validation-fn max-attempts]
+  (loop [attempt 1
+         errors nil]
+    (if (> attempt max-attempts)
+      (throw (ex-info "Failed to generate valid text within max attempts" {:attempts max-attempts}))
+      (let [result (llm/generate-text llm-client content errors)]
+        (try
+          (let [parsed-result (json/parse-string result true)]
+            (if (validation-fn parsed-result)
+              parsed-result
+              (recur (inc attempt) "Validation failed")))
+          (catch Exception e
+            (recur (inc attempt) (str "Parsing failed: " (.getMessage e)))))))))
+
 
 (defn create-client
   "Create an OllamaDoloresClient connecting to the Ollama LLM backend.
