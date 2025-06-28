@@ -1,16 +1,21 @@
 (ns dolores.email.imap
   (:require [clojure.tools.logging :as log]
             [clojure.string :as str]
-            [dolores.utils :refer [verify-args]]
+            [dolores.utils :refer [verify-args *->> uuid-v5]]
             [clojure.spec.alpha :as s]
             [dolores.email.protocol :refer [DoloresEmailService] :as email])
-  (:import (javax.mail Session Folder Message$RecipientType Message Multipart)
+  (:import (javax.mail Session Folder Message$RecipientType Message Multipart Flags$Flag)
            (javax.mail.search ReceivedDateTerm ComparisonTerm)
            (java.io InputStream)
            (com.edlio.emailreplyparser EmailReplyParser)
-           java.util.Date
+           (java.util Date UUID)
+           java.security.MessageDigest
            java.time.Instant
            org.jsoup.Jsoup))
+
+(def imap-namespace-uuid
+  "UUID namespace to contain message IDs."
+  (UUID/fromString "c0fcd99a-9593-4744-9c89-3b3598e4a73e"))
 
 (defprotocol RawEmailOperations
   "Protocol for raw email operations."
@@ -102,6 +107,16 @@
         text))
     (str msg-body)))
 
+(defn pthru [o] (clojure.pprint/pprint o) o)
+
+(defn gen-id [^Message msg]
+  (let [addr-strs (*->> (map str) (sort) (str/join ","))
+        from (addr-strs (.getFrom msg))
+        to   (addr-strs (.getRecipients msg Message$RecipientType/TO))
+        date (some-> msg (.getSentDate) (str))
+        subj (some-> msg (.getSubject) (str))]
+    (uuid-v5 imap-namespace-uuid (str from "|" to "|" date "|" subj))))
+
 (s/fdef parse-email
   :args (s/cat :msg (partial instance? Message))
   :ret (s/nilable ::email/email-full))
@@ -113,6 +128,7 @@
                 ::email/subject (or (.getSubject msg) "")
                 ::email/cc (vec (or (map #(str (.toString %)) (.getRecipients msg Message$RecipientType/CC)) []))
                 ::email/bcc (vec (or (map #(str (.toString %)) (.getRecipients msg Message$RecipientType/BCC)) []))
+                ::email/message-id (or (first (.getHeader msg "Message-ID")) (gen-id msg))
                 ::email/sent-date (or (some-> msg
                                               (.getSentDate)
                                               (.toInstant))
@@ -130,6 +146,10 @@
       (do (s/explain ::email/email-full email)
           (throw (ex-info "Invalid email" {:email email}))))))
 
+(defn email-read?
+  [^Message email]
+  (not (.isSet email Flags$Flag/SEEN)))
+
 (defrecord ImapService [raw-service]
   DoloresEmailService
 
@@ -141,7 +161,9 @@
 
   (get-emails [_ since]
     (try
-      (map parse-email (search-emails raw-service since))
+      (->> (search-emails raw-service since)
+           (filter email-read?)
+           (map parse-email))
       (catch Exception e
         (log/error e "Failed to fetch emails")))))
 
@@ -149,6 +171,6 @@
   :args (s/keys* :req-un [::email/host ::email/user ::email/password])
   :ret ImapService)
 (defn connect!
-  [& {:keys [::host ::user ::password]}]
+  [& {:keys [:host :user :password]}]
   (verify-args {:host host :user user :password password} [:host :user :password])
   (->ImapService (->RawImapService (-create-connection! host user password))))

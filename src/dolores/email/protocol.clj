@@ -16,11 +16,14 @@
 (s/def ::received-date ::instant?)
 (s/def ::spam-score number?)
 (s/def ::server-info string?)
+(s/def ::message-id string?)
 (s/def ::cc (s/coll-of string? :kind vector?))
 (s/def ::bcc (s/coll-of string? :kind vector?))
 (s/def ::attachments (s/coll-of string? :kind vector?))
-(s/def ::header (s/keys :req [::to ::from ::subject ::cc ::bcc ::sent-date ::received-date ::spam-score ::server-info]))
+(s/def ::header (s/keys :req [::to ::from ::subject ::cc ::bcc ::message-id ::sent-date ::received-date ::spam-score ::server-info]))
 (s/def ::email-full (s/keys :req [::header ::body ::attachments]))
+
+(def message-id ::message-id)
 
 (defprotocol DoloresEmailService
   "Protocol for email services to fetch headers and emails."

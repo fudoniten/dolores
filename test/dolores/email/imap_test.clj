@@ -3,12 +3,18 @@
             [clojure.string :as str]
             [dolores.email.imap :as imap]
             [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as gen]
             [dolores.email.protocol :as email])
   (:import (javax.mail.internet MimeMessage MimeBodyPart MimeMultipart)
            (javax.mail Session Message$RecipientType)
            (javax.mail Session)
            java.time.Instant
-           java.util.Date))
+           java.util.Date
+           java.util.UUID
+           javax.mail.Flags$Flag))
+
+(s/def ::addr string?)
+(s/def ::subject string?)
 
 (defn mock-mime-message
   "Creates a mock MimeMessage for testing."
@@ -139,5 +145,80 @@
           imap-service (imap/->ImapService raw-ops)
           emails (email/get-emails imap-service (Instant/now))]
       (is (every? #(s/valid? ::email/email-full %) emails)))))
+
+(deftest test-gen-id
+  (testing "gen-id produces consistent UUIDs based on message content"
+    (let [session (Session/getDefaultInstance (System/getProperties))
+          msg1 (doto (mock-mime-message session
+                                        :to "to@example.com"
+                                        :from "from@example.com"
+                                        :subject "Subj"
+                                        :body ""
+                                        :mime-type "text/plain")
+                 (.setSentDate (Date. 0)))
+          msg2 (doto (mock-mime-message session
+                                        :to "to@example.com"
+                                        :from "from@example.com"
+                                        :subject "Subj"
+                                        :body ""
+                                        :mime-type "text/plain")
+                 (.setSentDate (Date. 0)))
+          msg-diff (doto (mock-mime-message session
+                                            :to "to@example.com"
+                                            :from "from@example.com"
+                                            :subject "Other"
+                                            :body ""
+                                            :mime-type "text/plain")
+                     (.setSentDate (Date. 0)))
+          id1 (imap/gen-id msg1)
+          id2 (imap/gen-id msg2)
+          id3 (imap/gen-id msg-diff)]
+      (is (instance? UUID id1))
+      (is (= id1 id2))
+      (is (not= id1 id3)))))
+
+(deftest test-email-read?
+  (testing "email-read? identifies unread and read messages"
+    (let [session (Session/getDefaultInstance (System/getProperties))
+          msg (mock-mime-message session :to "a" :from "b" :subject "s")]
+      ;; initially unread
+      (is (imap/email-read? msg))
+      (.setFlag msg Flags$Flag/SEEN true)
+      (is (not (imap/email-read? msg))))))
+
+(deftest test-body->string
+  (testing "body->string for simple strings and multipart"
+    (is (= "abc" (imap/body->string "abc")))
+    (let [part1 (doto (javax.mail.internet.MimeBodyPart.) (.setText "p1"))
+          part2 (doto (javax.mail.internet.MimeBodyPart.) (.setText "p2"))
+          mp (doto (javax.mail.internet.MimeMultipart.)
+               (.addBodyPart part1)
+               (.addBodyPart part2))]
+      (is (= "p1p2" (imap/body->string mp))))))
+
+(deftest generative-gen-id-test
+  (testing "gen-id via spec-generated messages"
+    (let [session    (Session/getDefaultInstance (System/getProperties))
+          base-date  (Date. 0)
+          samples    (gen/sample (s/gen (s/tuple ::addr ::addr ::subject)) 50)]
+      (doseq [[from to subj] samples]
+        (let [msg1 (doto (mock-mime-message session
+                                            :from from
+                                            :to to
+                                            :subject subj
+                                            :body ""
+                                            :mime-type "text/plain")
+                     (.setSentDate base-date))
+              msg2 (doto (mock-mime-message session
+                                            :from from
+                                            :to to
+                                            :subject subj
+                                            :body ""
+                                            :mime-type "text/plain")
+                     (.setSentDate base-date))
+              id1  (imap/gen-id msg1)
+              id2  (imap/gen-id msg2)]
+          (is (= id1 id2)
+              (str "IDs differ for from=" from ", to=" to ", subj=" subj)))))))
 
 (run-tests)

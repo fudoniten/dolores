@@ -3,63 +3,62 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [dolores.llm :as llm]
-            [dolores.utils :refer [uri add-path]]
-            [clj-http.client :as http]))
-
-(defn pthru
-  "Pretty prints the given object for debugging."
-  [o]
-  (clojure.pprint/pprint o))
+            [dolores.utils :refer [uri add-path create-http-client get! post!]]))
 
 (defprotocol IOllamaClient
-  (list-models [self])
-  (create-task [self model system-prompt]))
+  "Protocol defining operations for Ollama LLM client."
+  (list-models [self]
+    "List available models from Ollama server.")
+  (create-task [self model system-prompt]
+    "Create a task for model with system prompt."))
 
-(defrecord OllamaTask [base-uri model system-prompt]
+(defrecord OllamaTask [http-client base-uri model system-prompt]
   llm/LLMClient
   (generate-text [_ content]
     (try
       (let [response
-            (http/post (str (add-path base-uri "chat"))
-                       {:body (json/generate-string
-                               {:model model
-                                :messages [{:role "system" :content system-prompt}
-                                           {:role "user" :content content}]
-                                :stream false})
-                        :headers {"Content-Type" "application/json"}
-                        :as :json})]
+            (post! http-client
+                   (str (add-path base-uri "chat"))
+                   {:body (json/generate-string
+                           {:model model
+                            :messages [{:role "system" :content system-prompt}
+                                       {:role "user" :content content}]
+                            :stream false})
+                    :headers {"Content-Type" "application/json"}
+                    :as :json})]
         (-> response
             (get-in [:body :message :content])
             (str/trim)))
       (catch Exception e
-        (log/error e "Failed to generate text with ollama")))))
+        (log/error e "Failed to generate text with ollama")
+        nil))))
 
-(defn -create-ollama-task
+(defn ^:private -create-ollama-task
   "Create a new OllamaTask with base URI, model, and system prompt."
   [base-uri &
    {:keys [::model ::system-prompt]}]
-  (->OllamaTask base-uri model system-prompt))
+  (->OllamaTask (create-http-client) base-uri model system-prompt))
 
-(defrecord OllamaClient [base-uri]
+(defrecord OllamaClient [http-client base-uri]
   IOllamaClient
   (list-models [_]
     (try
       (let [response
-            (http/get (str (add-path base-uri "tags"))
-                      :as :json)]
-        (get-in response [:body :models]))
+            (get! http-client
+                  (str (add-path base-uri "tags"))
+                  {:as :json})]
+        (map :model (get-in response [:body :models])))
       (catch Exception e
-        (log/error e "Failed to fetch list of ollama models"))))
+        (log/error e "Failed to fetch list of ollama models")
+        nil)))
 
   (create-task [_ model system-prompt]
-    (-create-ollama-task base-uri
-                         ::model model
-                         ::system-prompt system-prompt)))
+    (->OllamaTask http-client base-uri model system-prompt)))
 
-(defn -create-ollama-client
+(defn ^:private -create-ollama-client
   "Create an OllamaClient given host and port."
   [host port]
-  (->OllamaClient (uri host :port port :path "/api")))
+  (->OllamaClient (create-http-client) (uri host :port port :path "/api")))
 
 (defrecord OllamaDoloresClient
     [prioritizer summarizer bulk-summarizer highlighter]
