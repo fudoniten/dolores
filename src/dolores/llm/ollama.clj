@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [dolores.llm :as llm]
+            [dolores.state :as state]
             [dolores.utils :refer [uri add-path create-http-client get! post!]]))
 
 (defprotocol IOllamaClient
@@ -66,23 +67,6 @@
   [host port]
   (->OllamaClient (create-http-client) (uri host :port port :path "/api")))
 
-(defrecord OllamaDoloresClient
-    [prioritizer summarizer bulk-summarizer highlighter]
-
-  llm/LLMDoloresClient
-
-  (prioritize-email [_ email]
-    (llm/generate-text prioritizer {:email email}))
-
-  (summarize-email [_ email]
-    (llm/generate-text summarizer {:email email}))
-
-  (summarize-emails [_ emails]
-    (llm/generate-text bulk-summarizer {:email emails}))
-
-  (highlight-emails [_ emails]
-    (llm/generate-text highlighter {:email emails})))
-
 (defn generate-text-with-retries
   "Generate text with retries, attempting to parse and validate the result.
    Throws an exception if it fails within the specified max attempts."
@@ -99,6 +83,44 @@
               (recur (inc attempt) "Validation failed")))
           (catch Exception e
             (recur (inc attempt) (str "Parsing failed: " (.getMessage e)))))))))
+
+
+(defn create-validator
+  [spec]
+  (fn [val]
+    (if (s/valid? spec val)
+      true
+      (s/explain-data spec val))))
+
+
+(defrecord OllamaDoloresClient
+    [prioritizer summarizer bulk-summarizer highlighter]
+
+    llm/LLMDoloresClient
+
+    (prioritize-email [_ email]
+      (generate-text-with-retries prioritizer
+                                  {:email email}
+                                  (create-validator ::state/email-priority)
+                                  5))
+
+    (summarize-email [_ email]
+      (generate-text-with-retries summarizer
+                                  {:email email}
+                                  (create-validator ::state/summary)
+                                  5))
+
+    (summarize-emails [_ emails]
+      (generate-text-with-retries bulk-summarizer
+                                  {:emails emails}
+                                  (create-validator ::state/email-bulk-summary)
+                                  5))
+
+    (highlight-emails [_ emails]
+      (generate-text-with-retries highlighter
+                                  {:emails emails}
+                                  (create-validator ::state/email-hilights)
+                                  5)))
 
 
 (defn create-client

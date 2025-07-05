@@ -3,7 +3,7 @@
 (defprotocol LLMClient
   "Protocol for interacting with Large Language Models (LLMs)."
 
-  (generate-text [this content]
+  (generate-text [this content errors]
     "Generate text based on the given prompt."))
 
 (defprotocol LLMDoloresClient

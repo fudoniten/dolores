@@ -1,0 +1,10 @@
+#+title: Thoughts
+
+* Process of summarization
+
+1. Get email from channel
+2. Prioritize email
+3. Add to collection
+4. For medium & high priority emails, create summary
+5. Create hilights for high priority emails, and collect them
+6. Create bulk summary

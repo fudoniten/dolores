@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
 
             [dolores.email.protocol :as email]
+            [dolores.llm :as llm]
             [dolores.time-window :as tw]))
 
 (s/def ::summary string?)
@@ -30,8 +31,7 @@
                 ::critical-info]))
 
 (s/def ::email-priority
-  (s/map-of ::email/message-id
-            (s/keys :req [::priority ::priority-reason])))
+  (s/keys :req [::priority ::priority-reason]))
 
 (s/def ::email-hilights
   (s/keys :req [::action-items
@@ -47,7 +47,7 @@
                 ::current-email]))
 
 (defprotocol IUserEmailState
-  (add-email [self emails])
+  (add-email [self email])
   (get-summary [self message-id])
   (get-bulk-summary [self])
   (get-hilights [self])
@@ -61,12 +61,16 @@
     ::current-email (atom (tw/time-window ::email/received-date window-size))}
    :validator (partial s/valid? ::email-state)))
 
-(defrecord UserEmailState [state]
+(defrecord UserEmailState [state dolores-client]
   IUserEmailState
-  (add-email [_ emails]
+
+  (add-email [_ email]
     (swap! state
            update ::current-email
-           (fn [window] (tw/insert-items window emails))))
+           (fn [win] (tw/insert win
+                               (assoc email ::email/priority
+                                      (llm/prioritize-email dolores-client
+                                                            email))))))
 
   (get-summary [_ message-id]
     (get-in @state [::email-summaries message-id]))
@@ -77,4 +81,5 @@
   (get-hilights [_]
     (get @state ::email-hilights))
 
-  (summarize [_ summarizer]))
+  (summarize [_ summarizer]
+    ))
